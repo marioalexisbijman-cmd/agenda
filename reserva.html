@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Portal Público de Reserva de Horas</title>
+<style>
+body{font-family:Segoe UI,Arial,sans-serif;background:#f5f6fa;margin:0;padding:20px;display:flex;justify-content:center}
+.box{background:white;padding:35px;border-radius:24px;max-width:480px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,0.04);text-align:center}
+h2{color:#2c1e5a;margin-bottom:5px;font-weight:700}
+.info{background:#fff8df;padding:14px;border-radius:14px;font-size:14px;color:#6b5000;margin-bottom:20px;text-align:left;line-height:1.5}
+input,select,textarea,button{width:100%;padding:14px;margin:10px 0;border-radius:12px;border:1px solid #e2e8f0;font-size:15px;box-sizing:border-box}
+button{background:#6c3cff;color:white;font-weight:700;border:0;cursor:pointer;transition:background 0.2s}
+button:hover{background:#582ee6}
+.grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:15px 0;max-height:180px;overflow-y:auto;padding:5px}
+.time-btn{width:auto;min-width:80px;background:#f1ecff;color:#5b2fd6;padding:10px;border-radius:10px;border:0;font-weight:700;cursor:pointer}
+.time-btn.selected{background:#6c3cff;color:white}
+#msg{margin-top:15px;font-weight:700;color:#087a35;font-size:14px;line-height:1.5}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="box">
+    <h2 id="profTitle">📅 Solicitud de Atención</h2>
+    <p id="profSub" style="color:#718096;margin:0 0 20px 0;font-size:14px">Reserva de Horas Online y Presencial</p>
+    <div class="info">Por favor complete sus datos, seleccione el día deseado en el calendario y elija un bloque horario libre para enviar su solicitud al especialista.</div>
+    
+    <input id="pName" placeholder="Nombre completo del Paciente">
+    <input id="pPhone" placeholder="Teléfono Móvil (WhatsApp)">
+    <input id="pDate" type="date" onchange="loadHoursForDate()">
+    <select id="pMode" onchange="updatePrices()"><option value="Online">Online</option><option value="Presencial">Presencial</option></select>
+    <textarea id="pNotes" placeholder="Indique brevemente el motivo de consulta o mensaje (opcional)..." style="height:70px;resize:none"></textarea>
+    
+    <h3 style="font-size:16px;color:#2c1e5a;margin-top:20px">Horas disponibles para el día seleccionado:</h3>
+    <div class="grid" id="hoursGrid">Seleccione un día en el calendario para buscar bloques libres...</div>
+    
+    <button id="sendBtn" onclick="sendRequest()">Confirmar y Enviar Solicitud</button>
+    <div id="msg"></div>
+</div>
+
+<script>
+const DB_URL = "https://kpkrllooxsubacruoxqlz.supabase.co";
+const DB_KEY = "sb_publishable_1zDD5Pgu92My50gkOHlt7Q_Dj1pjv5f";
+const _supabase = supabase.createClient(DB_URL, DB_KEY);
+
+let urlParams = new URLSearchParams(window.location.search);
+let profesionalId = urlParams.get('id');
+
+let selectedTime = '', prices = {Online: 30000, Presencial: 40000};
+let baseConfig = {start: '08:00', end: '18:00'};
+
+let todayStr = new Date().toISOString().split('T')[0];
+document.getElementById('pDate').min = todayStr;
+document.getElementById('pDate').value = todayStr;
+
+async function loadProfessionalSetup() {
+    if(!profesionalId) {
+        hoursGrid.innerHTML = "<b style='color:#d93838'>Enlace inválido. No se ha detectado el identificador del profesional médico.</b>";
+        sendBtn.style.display = 'none';
+        return;
+    }
+
+    let {data: prof} = await _supabase.from('profesionales').select('nombre').eq('id', profesionalId).single();
+    if(prof) {
+        profTitle.textContent = "Agenda de " + prof.nombre;
+    }
+
+    let {data: cfg} = await _supabase.from('configuracion_horarios').select('*').eq('profesional_id', profesionalId).single();
+    if(cfg) {
+        prices.Online = Number(cfg.valor_online);
+        prices.Presencial = Number(cfg.valor_presencial);
+        baseConfig.start = cfg.hora_inicio.substring(0,5);
+        baseConfig.end = cfg.hora_termino.substring(0,5);
+        updatePrices();
+    }
+    
+    loadHoursForDate();
+}
+
+function mins(t){let p=t.split(':').map(Number);return p[0]*60+p[1]}
+function tm(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+
+async function loadHoursForDate() {
+    let chosenDate = document.getElementById('pDate').value;
+    if(!chosenDate) return;
+    
+    hoursGrid.innerHTML = "Buscando bloques disponibles...";
+    selectedTime = '';
+
+    let {data: appointments} = await _supabase.from('citas_agenda')
+        .select('hora_cita')
+        .eq('profesional_id', profesionalId)
+        .eq('fecha_cita', chosenDate)
+        .not('status', 'eq', 'cancelled');
+
+    let busyHours = appointments ? appointments.map(a => a.hora_cita.substring(0,5)) : [];
+
+    let availableSlots = [];
+    for(let m=mins(baseConfig.start); m+45<=mins(baseConfig.end); m+=45) {
+        let hourString = tm(m);
+        if(!busyHours.includes(hourString)) {
+            availableSlots.push(hourString);
+        }
+    }
+
+    renderGrid(availableSlots);
+}
+
+function renderGrid(list) {
+    hoursGrid.innerHTML = '';
+    if(list.length === 0) { hoursGrid.innerHTML = '<span style="color:#718096;font-size:14px">No quedan bloques horarios libres para la fecha seleccionada.</span>'; return; }
+    list.forEach(t => {
+        let b = document.createElement('button'); b.className = 'time-btn'; b.textContent = t;
+        b.onclick = () => { 
+            document.querySelectorAll('.time-btn').forEach(x=>x.classList.remove('selected')); 
+            b.classList.add('selected'); 
+            selectedTime = t; 
+        };
+        hoursGrid.appendChild(b);
+    });
+}
+
+function updatePrices() {
+    pMode.options[0].text = `Consulta Online ($${prices.Online.toLocaleString('es-CL')})`;
+    pMode.options[1].text = `Consulta Presencial ($${prices.Presencial.toLocaleString('es-CL')})`;
+}
+
+async function sendRequest() {
+    let name = pName.value.trim(), phone = pPhone.value.trim(), dateSel = pDate.value;
+    if(!name || !phone || !selectedTime || !dateSel) { alert('Por favor complete todos sus datos de contacto y elija un horario válido.'); return; }
+    
+    msg.style.color = "#6c3cff";
+    msg.textContent = 'Enviando solicitud de reserva al panel del especialista...';
+    sendBtn.disabled = true;
+
+    let totalVal = pMode.value === 'Online' ? prices.Online : prices.Presencial;
+
+    let {error} = await _supabase.from('citas_agenda').insert([
+        { 
+            profesional_id: profesionalId, 
+            nombre_paciente: name, 
+            telefono_paciente: phone, 
+            fecha_cita: dateSel,
+            hora_cita: selectedTime, 
+            modalidad: pMode.value, 
+            valor_pagado: totalVal, 
+            estado_pago: 'pendiente',
+            notes: pNotes.value,
+            status: 'pending' 
+        }
+    ]);
+
+    if(!error) {
+        msg.style.color = "#087a35";
+        msg.innerHTML = "✔️ ¡Solicitud enviada con éxito!<br>Su bloque ha sido bloqueado provisionalmente. El profesional revisará sus antecedentes y confirmará a la brevedad.";
+        pName.value = ''; pPhone.value = ''; pNotes.value = '';
+        loadHoursForDate();
+    } else {
+        msg.style.color = "#d93838";
+        msg.textContent = "Error al procesar reserva: " + error.message;
+    }
+    sendBtn.disabled = false;
+}
+
+loadProfessionalSetup();
+</script>
+</body>
+</html>
+
