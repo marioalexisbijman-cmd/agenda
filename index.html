@@ -174,10 +174,10 @@ function toggleAuth(showLogin){
 async function register(){
     let name = regName.value.trim(), email = regEmail.value.trim(), pass = regPass.value;
     if(!name || !email || pass.length < 6) { alert('Ingresa datos válidos. Contraseña mínimo 6 caracteres.'); return; }
-    
+   
     let {data, error} = await _supabase.auth.signUp({email, password: pass});
     if(error) { alert('Error: ' + error.message); return; }
-    
+   
     if(data.user) {
         await _supabase.from('profesionales').insert([{id: data.user.id, nombre: name, email: email}]);
         await _supabase.from('mensualidades_control').insert([{profesional_id: data.user.id, estado_pago: 'activo', monto_mensualidad: 25000}]);
@@ -202,7 +202,7 @@ async function checkSession(){
     let {data} = await _supabase.auth.getSession();
     if(data?.session) {
         currentUserId = data.session.user.id;
-        
+       
         let {data: pM} = await _supabase.from('mensualidades_control').select('estado_pago').eq('profesional_id', currentUserId).single();
         if(pM && pM.estado_pago !== 'activo') {
             document.getElementById('blockView').classList.remove('hidden');
@@ -212,7 +212,7 @@ async function checkSession(){
         document.getElementById('loginView').classList.add('hidden');
         document.getElementById('registerView').classList.add('hidden');
         document.getElementById('appView').classList.remove('hidden');
-        
+       
         let {data: prof} = await _supabase.from('profesionales').select('nombre').eq('id', currentUserId).single();
         userLabel.textContent = prof ? prof.nombre : 'Profesional';
         linkPublico.textContent = window.location.href.replace('index.html','') + 'reserva.html?id=' + currentUserId;
@@ -224,13 +224,13 @@ async function checkSession(){
 function mins(t){let p=t.split(':').map(Number);return p[0]*60+p[1]}
 function tm(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
 
-function slots(){ 
-    let a=[]; 
-    for(let m=mins(config.start); m+45<=mins(config.end); m+=45) { a.push(tm(m)); } 
-    return a; 
+function slots(){
+    let a=[];
+    for(let m=mins(config.start); m+45<=mins(config.end); m+=45) { a.push(tm(m)); }
+    return a;
 }
-function busy(t){ 
-    return sessions.some(s=>s.hora_cita.substring(0,5)===t && s.status!=='cancelled'); 
+function busy(t){
+    return sessions.some(s=>s.hora_cita.substring(0,5)===t && s.status!=='cancelled');
 }
 function show(id){
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -295,9 +295,9 @@ function render(){
     stMoney.textContent = '$' + conf.reduce((a,s)=>a+Number(s.valor_pagado),0).toLocaleString('es-CL');
 }
 
-function selectSession(id){ 
-    selectedId = id; 
-    let s = sessions.find(x=>x.id===id); 
+function selectSession(id){
+    selectedId = id;
+    let s = sessions.find(x=>x.id===id);
     if(!s) return;
     document.getElementById('actionBox').classList.remove('hidden');
     document.getElementById('updatePayStatus').value = s.estado_pago;
@@ -309,7 +309,7 @@ function selectSession(id){
         <hr style="border:0;border-top:1px solid #edf2f7;margin:10px 0">
         <p style="margin:5px 0">📝 <b>Notas de Consulta:</b></p>
         <p style="margin:0;font-style:italic;color:#4a5568">${s.notas || 'Sin anotaciones clínicas.'}</p>
-    `; 
+    `;
 }
 
 async function changePayState(){
@@ -321,10 +321,10 @@ async function changePayState(){
     }
 }
 
-async function acceptReq(id){ 
-    await _supabase.from('citas_agenda').update({status:'confirmed'}).eq('id', id); 
-    await pullData(); 
-    await pushAvailableHours(); 
+async function acceptReq(id){
+    await _supabase.from('citas_agenda').update({status:'confirmed'}).eq('id', id);
+    await pullData();
+    await pushAvailableHours();
 }
 
 async function saveConfig(){
@@ -345,32 +345,32 @@ async function addSession(){
     if(!newName.value || !chosen) { alert('Indica nombre del paciente y bloque de horario.'); return; }
     let sDate = document.getElementById('agendaDate').value;
     let v = newMode.value==='Online'?config.online:config.pres;
-    
+   
     await _supabase.from('citas_agenda').insert([{
-        profesional_id: currentUserId, 
-        nombre_paciente: newName.value, 
-        telefono_paciente: newPhone.value || 'Manual', 
+        profesional_id: currentUserId,
+        nombre_paciente: newName.value,
+        telefono_paciente: newPhone.value || 'Manual',
         fecha_cita: sDate,
-        hora_cita: chosen, 
-        modalidad: newMode.value, 
-        valor_pagado: v, 
+        hora_cita: chosen,
+        modalidad: newMode.value,
+        valor_pagado: v,
         estado_pago: newPay.value,
         notas: newNotes.value,
         status: 'confirmed'
     }]);
-    
-    newName.value=''; newPhone.value=''; newNotes.value=''; chosen=''; 
-    await pullData(); 
+   
+    newName.value=''; newPhone.value=''; newNotes.value=''; chosen='';
+    await pullData();
     await pushAvailableHours();
 }
 
 async function cancelSelected(){
     if(selectedId && confirm('¿Estás seguro que deseas eliminar o cancelar esta cita definitivamente?')){
         await _supabase.from('citas_agenda').update({status:'cancelled'}).eq('id', selectedId);
-        selectedId=null; 
+        selectedId=null;
         document.getElementById('actionBox').classList.add('hidden');
-        detail.textContent='Selecciona cualquier cita operativa para desplegar el historial clínico rápido...'; 
-        await pullData(); 
+        detail.textContent='Selecciona cualquier cita operativa para desplegar el historial clínico rápido...';
+        await pullData();
         await pushAvailableHours();
     }
 }
@@ -379,4 +379,5 @@ checkSession();
 </script>
 </body>
 </html>
+
 
