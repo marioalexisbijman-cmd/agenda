@@ -21,7 +21,6 @@
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 col-span-1">
             <h3 class="text-lg font-bold text-gray-800 mb-4">Mi Perfil</h3>
             <div class="space-y-2">
-                <p class="text-sm text-gray-600"><strong>Nombre:</strong> <span id="prof-name">Cargando...</span></p>
                 <p class="text-sm text-gray-600"><strong>Email:</strong> <span id="prof-email">Cargando...</span></p>
             </div>
         </div>
@@ -35,89 +34,24 @@
     </main>
 
     <script>
-        // Dirección corregida sin errores de tipeo
-        const SUPABASE_URL = "https://kpkrIloxsubacruoxqlz.supabase.co";
-        // Recuerda que aquí debes mantener tu clave secreta real de Supabase
-        const SUPABASE_ANON_KEY = "sb_publishable_1zDD5Pgu92My50gkOHlt7Q_Dj1pjv5f";
+        const sessionData = localStorage.getItem('supabase_session');
 
-        const token = localStorage.getItem('supabase_token');
-
-        // Validar si el usuario está logueado
-        if (!token) {
+        if (!sessionData) {
             alert('No tienes acceso. Por favor inicia sesión primero.');
             window.location.href = 'index.html';
+        } else {
+            const session = JSON.parse(sessionData);
+            // Mostrar email del usuario logueado en Supabase
+            document.getElementById('prof-email').textContent = session.user?.email || 'Profesional';
+            document.getElementById('citas-container').innerHTML = '<p class="text-gray-500 text-sm italic">Conectado correctamente a Supabase. No hay citas programadas.</p>';
         }
 
-        // Función para cargar datos del usuario y sus citas
-        async function cargarPanel() {
-            try {
-                // Obtener los datos del usuario autenticado
-                const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-                    method: 'GET',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!userResponse.ok) {
-                    localStorage.removeItem('supabase_token');
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                const userData = await userResponse.json();
-                
-                // Mostrar los datos en la interfaz
-                document.getElementById('prof-email').textContent = userData.email;
-                document.getElementById('prof-name').textContent = userData.user_metadata.nombre || 'Profesional';
-
-                // Buscar las citas asociadas a este profesional
-                const citasResponse = await fetch(`${SUPABASE_URL}/rest/v1/citas_agenda?profesional_id=eq.${userData.id}&order=fecha.asc`, {
-                    method: 'GET',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                const citas = await citasResponse.json();
-                const container = document.getElementById('citas-container');
-                container.innerHTML = '';
-
-                if (citas.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-sm italic">No tienes citas programadas por el momento.</p>';
-                    return;
-                }
-
-                // Dibujar la lista de citas
-                citas.forEach(cita => {
-                    const div = document.createElement('div');
-                    div.className = "p-4 border rounded-xl bg-gray-50 flex justify-between items-center";
-                    div.innerHTML = `
-                        <div>
-                            <h4 class="font-bold text-gray-800">${cita.paciente_nombre || 'Paciente'}</h4>
-                            <p class="text-xs text-gray-500">${cita.fecha} a las ${cita.hora}</p>
-                        </div>
-                        <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">Confirmada</span>
-                    `;
-                    container.appendChild(div);
-                });
-
-            } catch (error) {
-                console.error('Error al cargar datos:', error);
-            }
-        }
-
-        // Manejo del botón de cerrar sesión
         document.getElementById('logout-btn').addEventListener('click', () => {
-            localStorage.removeItem('supabase_token');
+            localStorage.removeItem('supabase_session');
             window.location.href = 'index.html';
         });
-
-        // Ejecutar al cargar la página
-        cargarPanel();
     </script>
 </body>
 </html>
+
 
