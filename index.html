@@ -39,10 +39,9 @@
     </div>
 
     <script>
-        // Dirección corregida sin errores de tipeo
-        const SUPABASE_URL = "https://kpkrIloxsubacruoxqlz.supabase.co";
-        // Recuerda que aquí debes mantener tu clave secreta real de Supabase
-        const SUPABASE_ANON_KEY = "sb_publishable_1zDD5Pgu92My50gkOHlt7Q_Dj1pjv5f";
+        // Configuración adaptada a Supabase
+        const SUPABASE_PROJECT_ID = "psiagenda-light"; 
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_1zDD5Pgu92My50gkOHlt7Q_DjlPj"; // Tu clave pública real
 
         let isRegister = false;
 
@@ -53,11 +52,9 @@
         const toggleLink = document.getElementById('toggle-link');
         const authForm = document.getElementById('auth-form');
 
-        // Alternar entre Iniciar Sesión y Registrarse
         toggleLink.addEventListener('click', (e) => {
             e.preventDefault();
             isRegister = !isRegister;
-            
             if (isRegister) {
                 formTitle.textContent = "Crear Cuenta Profesional";
                 nameField.classList.remove('hidden');
@@ -75,73 +72,46 @@
             }
         });
 
-        // Enviar el Formulario
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const nombre = document.getElementById('nombre').value;
 
+            // Ruta de autenticación nativa de Supabase
+            const urlBase = `https://${SUPABASE_PROJECT_ID}.supabase.co/api/v1/auth`;
+
             try {
                 if (isRegister) {
-                    // 1. Registrar usuario en la autenticación de Supabase
-                    const signUpResponse = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+                    const response = await fetch(`${urlBase}/signup`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'apikey': SUPABASE_ANON_KEY
+                            'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
                         },
-                        body: JSON.stringify({ email, password })
+                        body: JSON.stringify({ email, password, user_metadata: { nombre } })
                     });
 
-                    const signUpData = await signUpResponse.json();
-
-                    if (!signUpResponse.ok) throw new Error(signUpData.msg || signUpData.error_description || 'Error en el registro');
-
-                    // 2. Insertar los datos del profesional en la tabla pública
-                    if (signUpData.user) {
-                        const profileResponse = await fetch(`${SUPABASE_URL}/rest/v1/profesionales`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'apikey': SUPABASE_ANON_KEY,
-                                'Authorization': `Bearer ${signUpData.access_token}`,
-                                'Prefer': 'return=minimal'
-                            },
-                            body: JSON.stringify({
-                                id: signUpData.user.id,
-                                nombre: nombre,
-                                email: email
-                            })
-                        });
-
-                        if (!profileResponse.ok) {
-                            const profileError = await profileResponse.json();
-                            throw new Error(profileError.message || 'Error al guardar el perfil');
-                        }
-                    }
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'Error en el registro');
 
                     alert('¡Cuenta creada con éxito!');
+                    localStorage.setItem('supabase_session', JSON.stringify(data));
                     window.location.href = 'reserva.html';
-
                 } else {
-                    // Iniciar Sesión convencional
-                    const loginResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                    const response = await fetch(`${urlBase}/login`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'apikey': SUPABASE_ANON_KEY
+                            'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
                         },
                         body: JSON.stringify({ email, password })
                     });
 
-                    const loginData = await loginResponse.json();
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'Credenciales incorrectas');
 
-                    if (!loginResponse.ok) throw new Error(loginData.error_description || 'Correo o contraseña incorrectos');
-
-                    // Guardar token y entrar
-                    localStorage.setItem('supabase_token', loginData.access_token);
+                    localStorage.setItem('supabase_session', JSON.stringify(data));
                     window.location.href = 'reserva.html';
                 }
             } catch (error) {
