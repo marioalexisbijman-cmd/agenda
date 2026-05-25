@@ -1,57 +1,207 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Mis Citas</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Reservar Cita - PsiAgenda Pro</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f5f6fa;color:#1e1e2f;padding:20px}
+.reserve-box{max-width:500px;margin:40px auto;background:#fff;border-radius:24px;padding:35px;box-shadow:0 10px 30px rgba(35,20,70,.06)}
+.logo{display:flex;gap:12px;align-items:center;justify-content:center;margin-bottom:25px}
+.v{width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,#6c3cff,#27c7ff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;font-weight:900}
+h1,h2{margin:0;color:#2c1e5a;font-weight:700;text-align:center}
+h1{font-size:22px;color:#6c3cff}
+h2{font-size:18px;margin-bottom:20px}
+button,input,select,textarea{width:100%;padding:13px 16px;margin:8px 0;border-radius:14px;border:1px solid #e2e8f0;font-size:15px;background:#fff;color:#1e1e2f}
+button{border:0;background:#6c3cff;color:white;font-weight:700;cursor:pointer;transition:background 0.2s}
+button:hover{background:#582ee6}
+.hours{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0;max-height:200px;overflow-y:auto;padding:4px}
+.hour{width:auto;min-width:80px;background:#f1ecff;color:#2a165e;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px;border:0;margin:0;text-align:center}
+.hour.active{background:#6c3cff;color:white}
+.price-tag{background:#f4f1fe;padding:12px;border-radius:14px;font-size:14px;color:#4a4366;margin:10px 0;border:1px solid #e9e3ff;text-align:center}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body>
 
-    <nav class="bg-blue-900 text-white p-4 shadow-md">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold">Mi Panel de Agenda</h1>
-            <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-lg text-sm font-medium transition">
-                Cerrar Sesión
-            </button>
+<div class="reserve-box">
+    <div class="logo">
+        <div class="v">V</div>
+        <div>
+            <h1>PsiAgenda Pro</h1>
+            <div id="profLabel" style="font-size:13px;color:#718096;font-weight:600">Cargando profesional...</div>
         </div>
-    </nav>
+    </div>
 
-    <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 col-span-1">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">Mi Perfil</h3>
-            <div class="space-y-2">
-                <p class="text-sm text-gray-600"><strong>Email:</strong> <span id="prof-email">Cargando...</span></p>
-            </div>
-        </div>
+    <h2>Agendar mi Hora Médica</h2>
+    
+    <label style="font-weight:700;font-size:14px">1. Selecciona la Fecha</label>
+    <input id="resDate" type="date" onchange="getAvailableSlots()">
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 col-span-2">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">Próximas Citas Agendadas</h3>
-            <div id="citas-container" class="space-y-3">
-                <p class="text-gray-500 text-sm">Buscando citas en la base de datos...</p>
-            </div>
-        </div>
-    </main>
+    <label style="font-weight:700;font-size:14px;margin-top:15px;display:block">2. Bloques Horarios Disponibles</label>
+    <div class="hours" id="publicHours">
+        <p style="color:#718096;font-size:14px;text-align:center;width:100%">Selecciona una fecha primero.</p>
+    </div>
 
-    <script>
-        const sessionData = localStorage.getItem('supabase_session');
+    <label style="font-weight:700;font-size:14px;margin-top:15px;display:block">3. Modalidad de Atención</label>
+    <select id="resMode" onchange="updatePrice()"><option>Online</option><option>Presencial</option></select>
+    
+    <div class="price-tag" id="priceDisplay">Valor Consulta: --</div>
 
-        if (!sessionData) {
-            alert('No tienes acceso. Por favor inicia sesión primero.');
-            window.location.href = 'index.html';
-        } else {
-            const session = JSON.parse(sessionData);
-            // Mostrar email del usuario logueado en Supabase
-            document.getElementById('prof-email').textContent = session.user?.email || 'Profesional';
-            document.getElementById('citas-container').innerHTML = '<p class="text-gray-500 text-sm italic">Conectado correctamente a Supabase. No hay citas programadas.</p>';
-        }
+    <label style="font-weight:700;font-size:14px;margin-top:15px;display:block">4. Tus Datos de Contacto</label>
+    <input id="resName" placeholder="Tu nombre completo">
+    <input id="resPhone" placeholder="Teléfono de contacto (Ej: +569...)">
+    <textarea id="resNotes" placeholder="Escribe brevemente el motivo de consulta (opcional)..." style="height:70px;resize:none"></textarea>
 
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            localStorage.removeItem('supabase_session');
-            window.location.href = 'index.html';
-        });
-    </script>
+    <button onclick="requestAppointment()" style="margin-top:15px;font-size:16px;padding:15px">Confirmar y Solicitar Reserva 📅</button>
+</div>
+
+<script>
+// URL TOTALMENTE EN MINÚSCULAS PARA EVITAR EL ERROR DE CONEXIÓN
+const DB_URL = "https://kpkrloxsubacruoxqlz.supabase.co";
+
+// REEMPLAZA EL TEXTO DENTRO DE LAS COMILLAS POR LA MISMA CLAVE LARGA DE TU INDEX (LA QUE EMPIEZA CON eyJ...)
+const DB_KEY = "TU_CLAVE_ANON_REAL_AQUÍ";
+
+const _supabase = supabase.createClient(DB_URL, DB_KEY);
+
+let profId = new URLSearchParams(window.location.search).get('id');
+let profConfig = null;
+let chosenHour = '';
+
+// Configurar fecha mínima (hoy)
+document.getElementById('resDate').min = new Date().toISOString().split('T')[0];
+
+async function loadProfessional() {
+    if (!profId) {
+        alert('Enlace de reserva no válido. Falta el identificador del profesional.');
+        return;
+    }
+    
+    // Obtener nombre del profesional
+    let { data: prof, error } = await _supabase.from('profesionales').select('nombre').eq('id', profId).single();
+    if (prof) {
+        document.getElementById('profLabel').textContent = 'Atención con: ' + prof.nombre;
+    } else {
+        document.getElementById('profLabel').textContent = 'Profesional no encontrado';
+    }
+
+    // Obtener configuraciones de horarios y valores
+    let { data: cfg } = await _supabase.from('configuracion_horarios').select('*').eq('profesional_id', profId).single();
+    if (cfg) {
+        profConfig = cfg;
+        updatePrice();
+    }
+}
+
+function updatePrice() {
+    if (!profConfig) return;
+    let isOnline = document.getElementById('resMode').value === 'Online';
+    let price = isOnline ? profConfig.valor_online : profConfig.valor_presencial;
+    document.getElementById('priceDisplay').innerHTML = `Valor Consulta: <strong>$${Number(price).toLocaleString('es-CL')}</strong>`;
+}
+
+async function getAvailableSlots() {
+    let selDate = document.getElementById('resDate').value;
+    if (!selDate || !profId) return;
+
+    publicHours.innerHTML = '<p style="color:#718096;text-align:center;width:100%">Buscando horas libres...</p>';
+    chosenHour = '';
+
+    // 1. Obtener todas las horas base configuradas por el profesional
+    let { data: cfg } = await _supabase.from('configuracion_horarios').select('horas_disponibles').eq('profesional_id', profId).single();
+    if (!cfg || !cfg.horas_disponibles) {
+        publicHours.innerHTML = '<p style="color:#718096;text-align:center;width:100%">No hay horarios configurados para este profesional.</p>';
+        return;
+    }
+
+    let baseHours = [];
+    try {
+        baseHours = typeof cfg.horas_disponibles === 'string' ? JSON.parse(cfg.horas_disponibles) : cfg.horas_disponibles;
+    } catch(e) {
+        baseHours = [];
+    }
+
+    // 2. Obtener las citas ya ocupadas para ese día
+    let { data: appointments } = await _supabase.from('citas_agenda').select('hora_cita').eq('profesional_id', profId).eq('fecha_cita', selDate).not('status', 'eq', 'cancelled');
+    let busyHours = appointments ? appointments.map(a => a.hora_cita.substring(0,5)) : [];
+
+    // 3. Filtrar y renderizar las horas que estén libres realmente
+    let freeHours = baseHours.filter(h => !busyHours.includes(h));
+    
+    publicHours.innerHTML = '';
+    if (freeHours.length === 0) {
+        publicHours.innerHTML = '<p style="color:#ff4a4a;text-align:center;width:100%">⚠️ No quedan bloques disponibles para este día.</p>';
+        return;
+    }
+
+    freeHours.forEach(t => {
+        let b = document.createElement('button');
+        b.className = 'hour ' + (chosenHour === t ? 'active' : '');
+        b.textContent = t;
+        b.onclick = () => {
+            chosenHour = t;
+            renderHours(freeHours);
+        };
+        publicHours.appendChild(b);
+    });
+}
+
+function renderHours(hoursList) {
+    publicHours.innerHTML = '';
+    hoursList.forEach(t => {
+        let b = document.createElement('button');
+        b.className = 'hour ' + (chosenHour === t ? 'active' : '');
+        b.textContent = t;
+        b.onclick = () => {
+            chosenHour = t;
+            renderHours(hoursList);
+        };
+        publicHours.appendChild(b);
+    });
+}
+
+async function requestAppointment() {
+    let name = resName.value.trim();
+    let phone = resPhone.value.trim();
+    let date = resDate.value;
+    let mode = resMode.value;
+    let notes = resNotes.value.trim();
+
+    if (!name || !phone || !date || !chosenHour) {
+        alert('Por favor, completa todos los campos obligatorios y selecciona un bloque de horario.');
+        return;
+    }
+
+    let isOnline = mode === 'Online';
+    let cost = isOnline ? profConfig.valor_online : profConfig.valor_presencial;
+
+    // Insertar solicitud en estado 'pending' (Pendiente) para que el doctor la acepte en su panel
+    let { error } = await _supabase.from('citas_agenda').insert([{
+        profesional_id: profId,
+        nombre_paciente: name,
+        telefono_paciente: phone,
+        fecha_cita: date,
+        hora_cita: chosenHour,
+        modalidad: mode,
+        valor_pagado: cost,
+        estado_pago: 'pendiente',
+        notas: notes,
+        status: 'pending'
+    }]);
+
+    if (error) {
+        alert('Error al procesar la reserva: ' + error.message);
+    } else {
+        alert('¡Solicitud de reserva enviada con éxito! El profesional revisará y confirmará tu bloque.');
+        resName.value = ''; resPhone.value = ''; resNotes.value = ''; chosenHour = '';
+        getAvailableSlots();
+    }
+}
+
+loadProfessional();
+</script>
 </body>
 </html>
-
 
