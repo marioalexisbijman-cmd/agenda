@@ -1,125 +1,386 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - Sistema de Agendas</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>PsiAgenda Pro - Multiusuario Comercial</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f5f6fa;color:#1e1e2f;padding:20px}
+.auth-box{max-width:420px;margin:80px auto;background:#fff;border-radius:24px;padding:35px;box-shadow:0 10px 30px rgba(35,20,70,.06);text-align:center}
+.hidden{display:none!important}
+.app{max-width:1450px;margin:auto;display:grid;grid-template-columns:300px 1fr 350px;gap:20px}
+.card{background:#fff;border-radius:24px;padding:25px;box-shadow:0 8px 24px rgba(35,20,70,.04)}
+.logo{display:flex;gap:12px;align-items:center;margin-bottom:25px}
+.v{width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,#6c3cff,#27c7ff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;font-weight:900}
+h1,h2,h3{margin:0;color:#2c1e5a;font-weight:700}
+h1{font-size:22px;color:#6c3cff}
+h2{font-size:18px;margin-bottom:15px}
+button,input,select,textarea{width:100%;padding:13px 16px;margin:8px 0;border-radius:14px;border:1px solid #e2e8f0;font-size:15px;background:#fff;color:#1e1e2f}
+button{border:0;background:#6c3cff;color:white;font-weight:700;cursor:pointer;transition:background 0.2s}
+button:hover{background:#582ee6}
+.link-btn{background:none;color:#6c3cff;font-weight:500;padding:5px;margin:5px 0;text-decoration:underline;font-size:14px}
+.menu button{background:#f1ecff;color:#5b2fd6;margin-bottom:8px;text-align:left;padding-left:18px}
+.menu button:hover{background:#e5dbff}
+.danger{background:#fff0f0;color:#d93838}
+.danger:hover{background:#ffe3e3}
+.section{display:none}
+.section.active{display:block}
+.slot{padding:16px;border-radius:18px;margin:12px 0;display:flex;justify-content:space-between;align-items:center;gap:15px;background:#f0f5ff;border:2px solid transparent;transition:all 0.2s}
+.slot:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.03)}
+.slot-info{flex:1;text-align:left}
+.slot .miniBtn{width:100px!important;padding:8px 12px!important;border-radius:10px!important;font-size:13px!important;margin:0!important}
+.slot.presencial{background:#ebfaf1}
+.slot.pending{background:#fff9e6}
+.slot.selected{border-color:#6c3cff;background:#fbfaff}
+.badge{display:inline-block;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;margin-top:6px;margin-right:5px}
+.b-online{background:#efe2ff;color:#6c3cff}
+.b-pres{background:#dcffe7;color:#087a35}
+.b-pago{background:#e1f5fe;color:#0288d1}
+.b-debe{background:#ffebee;color:#c62828}
+.hours{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;max-height:180px;overflow-y:auto;padding:4px}
+.hour{width:auto;min-width:75px;background:#f1ecff;color:#2a165e;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:14px;border:0;margin:0}
+.hour.active{background:#6c3cff;color:white}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.stat{border-radius:18px;padding:16px;background:#f8f9fd;border:1px solid #edf2f7}
+.stat h2{font-size:24px;margin:5px 0 0 0;color:#6c3cff}
+.block-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(18,12,38,0.97);z-index:9999;display:flex;justify-content:center;align-items:center;color:white;padding:30px;text-align:center}
+.date-nav{display:flex;gap:10px;align-items:center;margin-bottom:20px}
+.date-nav input{margin:0}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<body>
 
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 id="form-title" class="text-2xl font-bold mb-6 text-center text-blue-900">Iniciar Sesión</h2>
-        
-        <form id="auth-form" class="space-y-4">
-            <div id="name-field" class="hidden">
-                <label class="block text-gray-700">Nombre Completo</label>
-                <input type="text" id="nombre" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Tu nombre">
-            </div>
-
-            <div>
-                <label class="block text-gray-700">Correo Electrónico</label>
-                <input type="email" id="email" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="correo@ejemplo.com">
-            </div>
-
-            <div>
-                <label class="block text-gray-700">Contraseña</label>
-                <input type="password" id="password" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Mínimo 6 caracteres">
-            </div>
-
-            <button type="submit" id="submit-btn" class="w-full bg-blue-800 text-white py-2 rounded-lg font-semibold hover:bg-blue-900 transition">
-                Ingresar
-            </button>
-        </form>
-
-        <p class="text-center text-sm text-gray-600 mt-4">
-            <span id="toggle-text">¿No tienes cuenta comercial?</span>
-            <a href="#" id="toggle-link" class="text-blue-700 font-semibold hover:underline">Regístrate aquí</a>
-        </p>
+<div id="blockView" class="block-screen hidden">
+    <div style="max-width:500px">
+        <h1 style="color:#ff4a4a;font-size:38px;margin-bottom:20px">⚠️ Cuenta Suspendida</h1>
+        <p style="font-size:18px;line-height:1.6;color:#cbd5e1">Tu suscripción mensual de uso de plataforma se encuentra vencida o inactiva. Regulariza tu situación con el administrador para recuperar el acceso a tu agenda.</p>
+        <button class="danger" onclick="logout()" style="margin-top:25px;width:200px">Cerrar Sesión</button>
     </div>
+</div>
 
-    <script>
-        // Configuración adaptada a Supabase
-        const SUPABASE_PROJECT_ID = "psiagenda-light"; 
-        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_1zDD5Pgu92My50gkOHlt7Q_DjlPj"; // Tu clave pública real
+<div id="loginView" class="auth-box">
+    <div class="v" style="margin:0 auto 18px auto">V</div>
+    <h2>Iniciar Sesión</h2>
+    <p style="color:#718096;font-size:14px;margin-bottom:20px">Software de Agenda Psicológica Multiusuario</p>
+    <input id="loginEmail" type="email" placeholder="Correo electrónico">
+    <input id="loginPass" type="password" placeholder="Contraseña">
+    <button onclick="login()">Entrar al Panel</button>
+    <button class="link-btn" onclick="toggleAuth(false)">¿No tienes cuenta comercial? Regístrate aquí</button>
+</div>
 
-        let isRegister = false;
+<div id="registerView" class="auth-box hidden">
+    <h2>Crear Cuenta Profesional</h2>
+    <p style="color:#718096;font-size:14px;margin-bottom:20px">Inicia tu mes de prueba gratuito</p>
+    <input id="regName" placeholder="Nombre completo del Profesional">
+    <input id="regEmail" type="email" placeholder="Correo electrónico institucional">
+    <input id="regPass" type="password" placeholder="Contraseña (mínimo 6 caracteres)">
+    <button onclick="register()">Registrarme e Iniciar</button>
+    <button class="link-btn" onclick="toggleAuth(true)">¿Ya tienes cuenta? Inicia sesión</button>
+</div>
 
-        const formTitle = document.getElementById('form-title');
-        const nameField = document.getElementById('name-field');
-        const submitBtn = document.getElementById('submit-btn');
-        const toggleText = document.getElementById('toggle-text');
-        const toggleLink = document.getElementById('toggle-link');
-        const authForm = document.getElementById('auth-form');
+<div id="appView" class="app hidden">
+<aside class="card" style="display:flex;flex-direction:column;justify-content:space-between">
+    <div>
+        <div class="logo"><div class="v">V</div><div><h1 style="font-size:19px">PsiAgenda Pro</h1><div id="userLabel" style="font-size:12px;color:#6c3cff;font-weight:700">Cargando...</div></div></div>
+        <div class="menu">
+            <button onclick="show('agenda')">📅 Control de Agenda</button>
+            <button onclick="show('solicitudes')">🟡 Solicitudes Web</button>
+            <button onclick="show('config')">⚙️ Configuración</button>
+        </div>
+        <hr style="border:0;border-top:1px solid #edf2f7;margin:20px 0">
+        <h2>➕ Bloqueo / Reserva Manual</h2>
+        <input id="newName" placeholder="Nombre del paciente">
+        <input id="newPhone" placeholder="Teléfono de contacto">
+        <select id="newMode"><option>Online</option><option>Presencial</option></select>
+        <select id="newPay"><option value="pagado">Pagado</option><option value="pendiente">Pendiente de Pago</option></select>
+        <textarea id="newNotes" placeholder="Notas internas o motivo..." style="height:60px;resize:none"></textarea>
+        <div class="hours" id="adminHours"></div>
+        <button onclick="addSession()">Guardar en Agenda</button>
+    </div>
+    <button class="danger" onclick="logout()" style="text-align:center;padding:12px;background:#fff0f0;margin-top:20px">🚪 Cerrar Sesión</button>
+</aside>
 
-        toggleLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            isRegister = !isRegister;
-            if (isRegister) {
-                formTitle.textContent = "Crear Cuenta Profesional";
-                nameField.classList.remove('hidden');
-                document.getElementById('nombre').required = true;
-                submitBtn.textContent = "Registrarme e Iniciar";
-                toggleText.textContent = "¿Ya tienes cuenta? ";
-                toggleLink.textContent = "Inicia sesión";
-            } else {
-                formTitle.textContent = "Iniciar Sesión";
-                nameField.classList.add('hidden');
-                document.getElementById('nombre').required = false;
-                submitBtn.textContent = "Ingresar";
-                toggleText.textContent = "¿No tienes cuenta comercial? ";
-                toggleLink.textContent = "Regístrate aquí";
-            }
-        });
+<main class="card">
+    <section id="agenda" class="section active">
+        <div class="date-nav">
+            <h2 style="margin:0;flex:1">Filtro de Atención</h2>
+            <input id="agendaDate" type="date" style="width:200px" onchange="pullData()">
+        </div>
+        <div class="stats">
+            <div class="stat">Citas Confirmadas Día<h2 id="stSessions">0</h2></div>
+            <div class="stat">Ingresos Consolidados Día<h2 id="stMoney">$0</h2></div>
+        </div>
+        <div id="agendaList"></div>
+    </section>
 
-        authForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const nombre = document.getElementById('nombre').value;
+    <section id="solicitudes" class="section">
+        <h2>Solicitudes de Clientes Desde la Web</h2>
+        <p style="color:#718096;font-size:14px;margin-bottom:15px">Pacientes que han seleccionado un bloque libre y esperan tu confirmación.</p>
+        <div id="requestList"></div>
+    </section>
 
-            // Ruta de autenticación nativa de Supabase
-            const urlBase = `https://${SUPABASE_PROJECT_ID}.supabase.co/api/v1/auth`;
+    <section id="config" class="section">
+        <h2>Parámetros de tu Consulta Comercial</h2>
+        <p style="color:#718096;font-size:14px;margin-bottom:20px">Define tus bloques de atención generales y tarifas comerciales.</p>
+        <label style="font-weight:700;font-size:14px">Hora Inicio de Jornada</label><input id="cfgStart" type="time" value="08:00">
+        <label style="font-weight:700;font-size:14px">Hora Término de Jornada</label><input id="cfgEnd" type="time" value="18:00">
+        <label style="font-weight:700;font-size:14px">Valor Consulta Online ($)</label><input id="cfgOnline" type="number" value="30000">
+        <label style="font-weight:700;font-size:14px">Valor Consulta Presencial ($)</label><input id="cfgPres" type="number" value="40000">
+        <button onclick="saveConfig()" style="margin-top:15px">💾 Guardar Configuración Profesional</button>
+    </section>
+</main>
 
-            try {
-                if (isRegister) {
-                    const response = await fetch(`${urlBase}/signup`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
-                        },
-                        body: JSON.stringify({ email, password, user_metadata: { nombre } })
-                    });
+<aside class="card" style="display:flex;flex-direction:column;justify-content:space-between">
+    <div>
+        <h2>Ficha Dinámica de Cita</h2>
+        <div id="detail" style="background:#f8f9fd;padding:20px;border-radius:18px;font-size:14px;color:#4a5568;border:1px solid #edf2f7">
+            Selecciona cualquier cita operativa para desplegar el historial clínico rápido, estados y botones de gestión.
+        </div>
+        <div id="actionBox" class="hidden">
+            <select id="updatePayStatus" onchange="changePayState()" style="margin-top:15px">
+                <option value="pendiente">Marcar como Pendiente</option>
+                <option value="pagado">Marcar como Pagado</option>
+            </select>
+            <button class="danger" style="margin-top:10px" onclick="cancelSelected()">❌ Cancelar / Eliminar Cita</button>
+        </div>
+    </div>
+    <div style="background:#f4f1fe;padding:18px;border-radius:16px;font-size:13px;color:#4a4366;border:1px solid #e9e3ff">
+        <strong>Enlace de Reserva para Clientes:</strong><br>
+        <p style="margin:5px 0;font-size:11px;color:#718096">Comparte esta URL para que tus pacientes agenden directo:</p>
+        <span id="linkPublico" style="word-break:break-all;color:#6c3cff;font-weight:700">Generando...</span>
+    </div>
+</aside>
+</div>
 
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || 'Error en el registro');
+<script>
+// URL TOTALMENTE EN MINÚSCULAS PARA EVITAR EL ERROR DE CONEXIÓN
+const DB_URL = "https://kpkrloxsubacruoxqlz.supabase.co";
 
-                    alert('¡Cuenta creada con éxito!');
-                    localStorage.setItem('supabase_session', JSON.stringify(data));
-                    window.location.href = 'reserva.html';
-                } else {
-                    const response = await fetch(`${urlBase}/login`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
-                        },
-                        body: JSON.stringify({ email, password })
-                    });
+// REEMPLAZA EL TEXTO DENTRO DE LAS COMILLAS POR TU CLAVE LARGA (LA QUE EMPIEZA CON eyJ...)
+const DB_KEY = "TU_CLAVE_ANON_REAL_AQUÍ";
 
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.message || 'Credenciales incorrectas');
+const _supabase = supabase.createClient(DB_URL, DB_KEY);
 
-                    localStorage.setItem('supabase_session', JSON.stringify(data));
-                    window.location.href = 'reserva.html';
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-                console.error(error);
-            }
-        });
-    </script>
+let currentUserId = null;
+let config = {online: 30000, pres: 40000, start: '08:00', end: '18:00'};
+let sessions = [];
+let chosen = '', selectedId = null;
+
+document.getElementById('agendaDate').value = new Date().toISOString().split('T')[0];
+
+function toggleAuth(showLogin){
+    document.getElementById('loginView').classList.toggle('hidden', !showLogin);
+    document.getElementById('registerView').classList.toggle('hidden', showLogin);
+}
+
+async function register(){
+    let name = regName.value.trim(), email = regEmail.value.trim(), pass = regPass.value;
+    if(!name || !email || pass.length < 6) { alert('Ingresa datos válidos. Contraseña mínimo 6 caracteres.'); return; }
+   
+    let {data, error} = await _supabase.auth.signUp({email, password: pass});
+    if(error) { alert('Error: ' + error.message); return; }
+   
+    if(data.user) {
+        await _supabase.from('profesionales').insert([{id: data.user.id, nombre: name, email: email}]);
+        await _supabase.from('mensualidades_control').insert([{profesional_id: data.user.id, estado_pago: 'activo', monto_mensualidad: 25000}]);
+        await _supabase.from('configuracion_horarios').insert([{profesional_id: data.user.id}]);
+        alert('Registro completado con éxito.');
+        checkSession();
+    }
+}
+
+async function login(){
+    let {data, error} = await _supabase.auth.signInWithPassword({email: loginEmail.value, password: loginPass.value});
+    if(error) { alert('Acceso denegado: ' + error.message); return; }
+    checkSession();
+}
+
+async function logout(){
+    await _supabase.auth.signOut();
+    location.reload();
+}
+
+async function checkSession(){
+    let {data} = await _supabase.auth.getSession();
+    if(data?.session) {
+        currentUserId = data.session.user.id;
+       
+        let {data: pM} = await _supabase.from('mensualidades_control').select('estado_pago').eq('profesional_id', currentUserId).single();
+        if(pM && pM.estado_pago !== 'activo') {
+            document.getElementById('blockView').classList.remove('hidden');
+            return;
+        }
+
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('registerView').classList.add('hidden');
+        document.getElementById('appView').classList.remove('hidden');
+       
+        let {data: prof} = await _supabase.from('profesionales').select('nombre').eq('id', currentUserId).single();
+        userLabel.textContent = prof ? prof.nombre : 'Profesional';
+        linkPublico.textContent = window.location.href.replace('index.html','') + 'reserva.html?id=' + currentUserId;
+
+        initDashboard();
+    }
+}
+
+function mins(t){let p=t.split(':').map(Number);return p[0]*60+p[1]}
+function tm(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+
+function slots(){
+    let a=[];
+    for(let m=mins(config.start); m+45<=mins(config.end); m+=45) { a.push(tm(m)); }
+    return a;
+}
+function busy(t){
+    return sessions.some(s=>s.hora_cita.substring(0,5)===t && s.status!=='cancelled');
+}
+function show(id){
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    render();
+}
+
+async function initDashboard(){
+    let {data: cfg} = await _supabase.from('configuracion_horarios').select('*').eq('profesional_id', currentUserId).single();
+    if(cfg) {
+        config = {start: cfg.hora_inicio.substring(0,5), end: cfg.hora_termino.substring(0,5), online: Number(cfg.valor_online), pres: Number(cfg.valor_presencial)};
+        cfgStart.value = config.start; cfgEnd.value = config.end; cfgOnline.value = config.online; cfgPres.value = config.pres;
+    }
+    await pullData();
+    setInterval(pullData, 7000);
+}
+
+async function pullData(){
+    let selDate = document.getElementById('agendaDate').value;
+    let {data} = await _supabase.from('citas_agenda').select('*').eq('profesional_id', currentUserId).eq('fecha_cita', selDate);
+    if(data) { sessions = data; render(); }
+}
+
+function render(){
+    sessions.sort((a,b)=>mins(a.hora_cita)-mins(b.hora_cita));
+    adminHours.innerHTML='';
+    slots().filter(t=>!busy(t)).forEach(t=>{
+        let b=document.createElement('button'); b.className='hour '+(chosen===t?'active':''); b.textContent=t;
+        b.onclick=()=>{chosen=t;render()}; adminHours.appendChild(b);
+    });
+
+    agendaList.innerHTML='';
+    let conf = sessions.filter(s=>s.status==='confirmed');
+    if(conf.length === 0) { agendaList.innerHTML = '<p style="color:#718096;text-align:center;margin-top:30px">No hay citas confirmadas para esta fecha.</p>'; }
+    conf.forEach(s=>{
+        agendaList.innerHTML+=`<div class="slot ${s.modalidad==='Presencial'?'presencial':''} ${s.id===selectedId?'selected':''}">
+            <div class="slot-info">
+                <b>${s.hora_cita.substring(0,5)} hrs</b> - ${s.nombre_paciente}<br>
+                <span class="badge ${s.modalidad==='Online'?'b-online':'b-pres'}">${s.modalidad}</span>
+                <span class="badge ${s.estado_pago==='pagado'?'b-pago':'b-debe'}">${s.estado_pago.toUpperCase()}</span>
+            </div>
+            <button class="miniBtn" onclick="selectSession(${s.id})">Ver Ficha</button>
+        </div>`;
+    });
+
+    requestList.innerHTML='';
+    let pend = sessions.filter(s=>s.status==='pending');
+    if(pend.length === 0) { requestList.innerHTML = '<p style="color:#718096;text-align:center;padding:20px">No tienes solicitudes pendientes en la bandeja.</p>'; }
+    pend.forEach(s=>{
+        requestList.innerHTML+=`<div class="slot pending">
+            <div class="slot-info">
+                📅 <b>${s.fecha_cita}</b> a las <b>${s.hora_cita.substring(0,5)} hrs</b><br>
+                👤 Paciente: <b>${s.nombre_paciente}</b> (Tel: ${s.telefono_paciente})<br>
+                <span class="badge b-online">${s.modalidad}</span> <span class="badge b-debe">POR COBRAR</span>
+                ${s.notes ? `<p style="margin:5px 0 0 0;font-size:13px;color:#718096">💬 Motivo: ${s.notes}</p>` : ''}
+            </div>
+            <button class="miniBtn" style="background:#2baf5d" onclick="acceptReq(${s.id})">Aceptar ✔️</button>
+        </div>`;
+    });
+
+    stSessions.textContent = conf.length;
+    stMoney.textContent = '$' + conf.reduce((a,s)=>a+Number(s.valor_pagado),0).toLocaleString('es-CL');
+}
+
+function selectSession(id){
+    selectedId = id;
+    let s = sessions.find(x=>x.id===id);
+    if(!s) return;
+    document.getElementById('actionBox').classList.remove('hidden');
+    document.getElementById('updatePayStatus').value = s.estado_pago;
+    detail.innerHTML = `
+        <p style="margin:0 0 10px 0">👤 <b>${s.nombre_paciente}</b></p>
+        <p style="margin:5px 0">📞 Fono: ${s.telefono_paciente}</p>
+        <p style="margin:5px 0">🕒 Hora: ${s.hora_cita.substring(0,5)} hrs</p>
+        <p style="margin:5px 0">💰 Valor: $${Number(s.valor_pagado).toLocaleString('es-CL')}</p>
+        <hr style="border:0;border-top:1px solid #edf2f7;margin:10px 0">
+        <p style="margin:5px 0">📝 <b>Notas de Consulta:</b></p>
+        <p style="margin:0;font-style:italic;color:#4a5568">${s.notes || 'Sin anotaciones clínicas.'}</p>
+    `;
+}
+
+async function changePayState(){
+    let nState = document.getElementById('updatePayStatus').value;
+    if(selectedId) {
+        await _supabase.from('citas_agenda').update({estado_pago: nState}).eq('id', selectedId);
+        await pullData();
+        selectSession(selectedId);
+    }
+}
+
+async function acceptReq(id){
+    await _supabase.from('citas_agenda').update({status:'confirmed'}).eq('id', id);
+    await pullData();
+    await pushAvailableHours();
+}
+
+async function saveConfig(){
+    config = {start: cfgStart.value, end: cfgEnd.value, online: Number(cfgOnline.value), pres: Number(cfgPres.value)};
+    await _supabase.from('configuracion_horarios').update({
+        hora_inicio: config.start, hora_termino: config.end, valor_online: config.online, valor_presencial: config.pres
+    }).eq('profesional_id', currentUserId);
+    await pushAvailableHours();
+    alert('Tus parámetros comerciales han sido guardados.');
+}
+
+async function pushAvailableHours(){
+    let avail = slots().filter(t=>!busy(t));
+    await _supabase.from('configuracion_horarios').update({horas_disponibles: JSON.stringify(avail)}).eq('profesional_id', currentUserId);
+}
+
+async function addSession(){
+    if(!newName.value || !chosen) { alert('Indica nombre del paciente y bloque de horario.'); return; }
+    let sDate = document.getElementById('agendaDate').value;
+    let v = newMode.value==='Online'?config.online:config.pres;
+   
+    await _supabase.from('citas_agenda').insert([{
+        profesional_id: currentUserId,
+        nombre_paciente: newName.value,
+        telefono_paciente: newPhone.value || 'Manual',
+        fecha_cita: sDate,
+        hora_cita: chosen,
+        modalidad: newMode.value,
+        valor_pagado: v,
+        estado_pago: newPay.value,
+        notas: newNotes.value,
+        status: 'confirmed'
+    }]);
+   
+    newName.value=''; newPhone.value=''; newNotes.value=''; chosen='';
+    await pullData();
+    await pushAvailableHours();
+}
+
+async function cancelSelected(){
+    if(selectedId && confirm('¿Estás seguro que deseas eliminar o cancelar esta cita definitivamente?')){
+        await _supabase.from('citas_agenda').update({status:'cancelled'}).eq('id', selectedId);
+        selectedId=null;
+        document.getElementById('actionBox').classList.add('hidden');
+        detail.textContent='Selecciona cualquier cita operativa para desplegar el historial clínico rápido...';
+        await pullData();
+        await pushAvailableHours();
+    }
+}
+
+checkSession();
+</script>
 </body>
 </html>
 
