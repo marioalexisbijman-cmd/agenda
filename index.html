@@ -3,354 +3,601 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>PsiAgenda Pro - Panel Profesional</title>
-<style>
-:root {
-    --bg-main: #f0f3f9;
-    --sidebar-bg: #f8fafc;
-    --primary: #4f46e5;
-    --primary-hover: #4338ca;
-    --text-dark: #1e1b4b;
-    --text-muted: #64748b;
-    --card-bg: #ffffff;
-    --border-radius: 24px;
-}
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: system-ui, -apple-system, sans-serif; }
-body { margin: 0; background: var(--bg-main); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; padding: 15px; gap: 15px; }
-
-/* PANEL IZQUIERDO (SIDEBAR STYLE FOTO 2) */
-.sidebar { width: 280px; background: var(--card-bg); border-radius: var(--border-radius); padding: 25px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
-.logo-box { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
-.v-logo { width: 46px; height: 46px; border-radius: 16px; background: #e0e7ff; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-.u-name { font-size: 18px; font-weight: 700; color: var(--primary); }
-.u-sub { font-size: 12px; color: var(--text-muted); }
-.menu-btn { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 18px; background: none; border: 0; border-radius: 14px; color: var(--text-muted); font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; transition: all .2s; }
-.menu-btn:hover, .menu-btn.active { background: var(--primary); color: white; }
-
-/* NUEVA RESERVA MANUAL */
-.manual-box { background: #f8fafc; border-radius: 18px; padding: 15px; margin-top: 15px; }
-.manual-title { font-size: 15px; font-weight: 700; color: var(--primary); margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px; }
-input, select, textarea { width: 100%; padding: 11px 14px; margin: 5px 0; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; background: #fff; color: var(--text-dark); outline: none; }
-input:focus, select:focus { border-color: var(--primary); }
-.btn-primary { border: 0; background: var(--primary); color: white; font-weight: 700; cursor: pointer; border-radius: 14px; padding: 12px; transition: background .2s; }
-.btn-primary:hover { background: var(--primary-hover); }
-
-/* CONTENIDO CENTRAL */
-.main-content { flex-grow: 1; display: flex; gap: 15px; overflow: hidden; }
-.center-panel { flex-grow: 1; background: var(--card-bg); border-radius: var(--border-radius); padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
-.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-.panel-title { font-size: 22px; font-weight: 700; color: var(--text-dark); margin: 0; }
-
-/* BLOQUES DE CITAS CLONADOS DE LA FOTO 2 */
-.agenda-container { display: flex; flex-direction: column; gap: 12px; }
-.hour-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
-.hour-block:hover { border-color: var(--primary); background: #f5f3ff; }
-.hour-time { font-size: 16px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
-.hour-patient { font-size: 15px; font-weight: 600; color: #334155; margin-bottom: 6px; }
-.mode-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; display: inline-block; text-transform: uppercase; }
-.mode-badge.online { background: #e0e7ff; color: #4338ca; }
-.mode-badge.presencial { background: #dcfce7; color: #15803d; }
-.btn-ver { background: #fff; border: 1px solid #cbd5e1; color: var(--text-muted); font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 10px; cursor: pointer; width: auto; transition: all 0.2s; }
-.btn-ver:hover { background: var(--primary); color: white; border-color: var(--primary); }
-
-/* VISTAS EXTRAS */
-.section-view { display: none; width: 100%; flex-direction: column; gap: 20px; }
-.section-view.active { display: flex; }
-.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-.stat-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 18px; text-align: center; }
-.stat-val { font-size: 24px; font-weight: 800; color: var(--primary); margin-top: 5px; }
-
-/* PANEL DERECHO (DETALLE SESIÓN CLONADO FOTO 2) */
-.right-panel { width: 340px; background: var(--card-bg); border-radius: var(--border-radius); padding: 25px; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
-.right-title { font-size: 18px; font-weight: 700; color: var(--text-dark); margin: 0; }
-.det-row { font-size: 14px; margin-bottom: 8px; color: #334155; }
-.det-label { font-weight: 700; color: var(--text-dark); display: inline-block; width: 90px; }
-.btn-toggle-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
-.toggle-item { padding: 10px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: 700; border: 1px solid #e2e8f0; cursor: pointer; }
-.toggle-item.online.active { background: #e0e7ff; color: #4338ca; border-color: #4338ca; }
-.toggle-item.presencial.active { background: #dcfce7; color: #15803d; border-color: #15803d; }
-
-/* BOTONES DE MOVIMIENTO RÁPIDO HORARIO */
-.quick-move-container { display: flex; flex-direction: column; gap: 6px; margin-top: 5px; }
-.btn-quick-move { background: #f1f5f9; border: 0; color: #4338ca; text-align: left; font-size: 12px; font-weight: 700; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
-.btn-quick-move:hover { background: #e2e8f0; }
-
-.empty-text { color: var(--text-muted); font-size: 13px; text-align: center; margin-top: 40px; line-height: 1.5; }
-</style>
+<title>PsiAgenda MASTER V6 Estable</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f2fb;color:#151022;padding:20px;padding-top:env(safe-area-inset-top,20px)}
+.app{max-width:1450px;margin:auto;display:grid;grid-template-columns:280px 1fr 330px;gap:18px}
+.card{background:#fff;border-radius:24px;padding:22px;box-shadow:0 8px 26px rgba(40,20,90,.08)}
+.logo{display:flex;gap:12px;align-items:center;margin-bottom:20px}
+.v{width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,#6c3cff,#27c7ff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:900}
+h1{margin:0;color:#6c3cff}
+button,input,select{width:100%;padding:13px;margin:7px 0;border-radius:14px;border:1px solid #ddd;font-size:16px;-webkit-appearance:none}
+.miniBtn{width:110px!important;padding:8px 12px!important;border-radius:12px!important;font-size:14px!important;background:#6c3cff!important;color:white!important;font-weight:700!important;align-self:center}
+button{border:0;background:#6c3cff;color:white;font-weight:800;cursor:pointer;transition:transform .1s ease}
+button:active{transform:scale(.98)}
+.menu button{background:#efe7ff;color:#5b2fd6;margin-bottom:5px;text-align:left;padding-left:18px}
+.danger{background:#ffe0e0!important;color:#c62828!important}
+.okBtn{background:#dcffe7!important;color:#087a35!important}
+.warnBtn{background:#fff0ae!important;color:#805900!important}
+.ok{background:#dcffe7;color:#087a35;padding:12px;border-radius:14px;margin:8px 0;font-weight:bold;text-align:center}
+.err{background:#ffe0e0;color:#a40000;padding:12px;border-radius:14px;margin:8px 0;font-weight:bold;white-space:pre-wrap}
+.section{display:none}.section.active{display:block}
+.slot{padding:16px;border-radius:18px;margin:12px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#edf4ff;border:3px solid transparent}
+.slot.presencial{background:#eafff1}.slot.blocked{background:#ffeaea}.slot.pending{background:#fff8df}.slot.selected{border-color:#6c3cff}
+.badge{display:inline-block;padding:5px 10px;border-radius:99px;font-size:12px;font-weight:800;margin-top:6px}
+.online{background:#efe2ff;color:#6c3cff}.pres{background:#dcffe7;color:#087a35}.block{background:#ffd4d4;color:#a60000}.pendingB{background:#fff0ae;color:#805900}
+.hours{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.hour{width:auto;min-width:78px;background:#e9ddff;color:#2a165e}
+.hour.active{background:#6c3cff;color:white}.hour.busy{background:#bdbdbd!important;color:#444!important;cursor:not-allowed}.hour.blocked{background:#ffd6d6;color:#9a0000}.slot.cancelled{background:#f2f2f2;color:#777}.cancelB{background:#e5e5e5;color:#555}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{border-radius:18px;padding:16px;background:#f4f4ff}
+.note{background:#fff8df;border-radius:14px;padding:12px;margin:10px 0}.datebar{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px;align-items:center;margin:12px 0}
+.small{font-size:13px;color:#666}
+.mobileTabs{display:none;gap:8px;position:sticky;top:0;background:#f4f2fb;padding:8px;z-index:9}
+.mobileTabs button{font-size:14px;padding:10px;text-align:center;background:#6c3cff;color:white}
+@media(max-width:900px){body{padding:10px}.app{display:block}.card{margin-bottom:12px}.mobileTabs{display:flex}.panel{display:none}.panel.show{display:block}}
+</style>
 </head>
 <body>
 
-<div class="sidebar">
-    <div class="logo-box">
-        <div class="v-logo">🧠</div>
-        <div>
-            <div class="u-name">PsiAgenda</div>
-            <div class="u-sub" id="topNavName">Valentina Psicóloga</div>
-        </div>
-    </div>
-    
-    <button class="menu-btn active" onclick="switchTab('agenda')">💻 Agenda</button>
-    <button class="menu-btn" onclick="switchTab('pacientes')">👥 Pacientes</button>
-    <button class="menu-btn" onclick="switchTab('estadisticas')">📊 Estadísticas</button>
-    <button class="menu-btn" onclick="switchTab('config')">⚙️ Configuración</button>
-    
-    <div class="manual-box">
-        <div class="manual-title">➕ Nueva Reserva</div>
-        <input id="manName" placeholder="Nombre paciente">
-        <select id="manMode"><option>Online</option><option>Presencial</option></select>
-        <input id="manTime" placeholder="Ejemplo 13:30" type="time">
-        <button class="btn-primary" onclick="createManualAppointment()" style="width:100%; margin-top:5px; background:#4f46e5;">Guardar sesión</button>
-    </div>
-    
-    <button onclick="logout()" style="margin-top:auto; background:#fee2e2; color:#ef4444; border:0; border-radius:10px; padding:8px; font-size:12px; font-weight:700; cursor:pointer;">🔒 Cerrar Sesión</button>
+<div class="mobileTabs">
+<button onclick="mobile('left')">🏠 Menú</button>
+<button onclick="mobile('center')">📅 Panel</button>
+<button onclick="mobile('right')">🔍 Detalle</button>
 </div>
 
-<div class="main-content">
-    <div class="center-panel">
-        
-        <div id="view-agenda" class="section-view active">
-            <div class="panel-header">
-                <h2 class="panel-title">Agenda de Hoy</h2>
-                <input id="filterDate" type="date" onchange="loadAppointments()" style="width:160px; margin:0; border-radius:14px;">
-            </div>
-            <div class="agenda-container" id="blocksContainer">
-                <div class="empty-text">Cargando agenda operativa...</div>
-            </div>
-        </div>
+<div class="app">
+<aside id="left" class="card panel show">
+<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">MASTER V6 · Estable</div></div></div>
 
-        <div id="view-pacientes" class="section-view">
-            <h2 class="panel-title">Fichero de Pacientes Atendidos</h2>
-            <div style="background:#f8fafc; border-radius:16px; padding:15px; border:1px solid #e2e8f0;" id="patientsContainer">
-                Cargando datos clínicos...
-            </div>
-        </div>
+<div class="note"><b>Conexión Supabase</b><br>Usa tu misma URL y anon public key.</div>
+<input id="supabaseUrl" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
+<input id="supabaseKey" placeholder="SUPABASE ANON PUBLIC KEY">
+<button onclick="connectSupabase()">🔌 Conectar / Cargar</button>
+<button class="warnBtn" onclick="loadAll()">🔄 Recargar desde Supabase</button>
+<div id="statusBox"></div>
 
-        <div id="view-estadisticas" class="section-view">
-            <h2 class="panel-title">Rendimiento y Métricas</h2>
-            <div class="stats-grid">
-                <div class="stat-card"><div>Sesiones Realizadas</div><div class="stat-val" id="stTotalCitas">0</div></div>
-                <div class="stat-card"><div>Ingresos Acumulados</div><div class="stat-val" id="stIngresos">$0</div></div>
-                <div class="stat-card"><div>Preferencia Online</div><div class="stat-val" id="stPctOnline">0%</div></div>
-            </div>
-        </div>
+<div class="menu">
+<button onclick="show('agenda')">📅 Agenda por Fecha</button>
+<button onclick="show('solicitudes')">🟡 Solicitudes</button><button onclick="show('proximas')">🟢 Próximas</button><button onclick="show('historial')">📚 Historial</button><button onclick="show('canceladas')">❌ Canceladas</button>
+<button onclick="show('pacientes')">👥 Pacientes</button>
+<button onclick="show('estadisticas')">📊 Estadísticas</button>
+<button onclick="show('disponibilidad')">🟢 Disponibilidad</button>
+<button onclick="show('bloqueos')">🔒 Bloqueos</button>
+<button onclick="show('config')">⚙️ Configuración</button>
+<button onclick="show('pacienteWeb')">🌐 Vista Paciente</button>
+<button onclick="show('adminLight')">🛡️ Admin LIGHT</button>
+</div>
+<hr>
 
-        <div id="view-config" class="section-view">
-            <h2 class="panel-title">Configuración de Parámetros</h2>
-            <label style="font-size:13px; font-weight:600;">Hora Inicio de Consultas</label><input id="cfgStart" type="time">
-            <label style="font-size:13px; font-weight:600;">Hora Término de Consultas</label><input id="cfgEnd" type="time">
-            <label style="font-size:13px; font-weight:600;">Valor Consulta Online ($)</label><input id="cfgOnline" type="number">
-            <label style="font-size:13px; font-weight:600;">Valor Consulta Presencial ($)</label><input id="cfgPresencial" type="number">
-            <button class="btn-primary" onclick="saveConfig()" style="margin-top:10px;">Guardar Configuración General</button>
-        </div>
+<h2>➕ Reserva Manual</h2>
+<input id="newName" placeholder="Nombre paciente">
+<input id="newPhone" placeholder="Teléfono / WhatsApp">
+<input id="newEmail" placeholder="Correo">
+<select id="newMode"><option>Online</option><option>Presencial</option></select>
+<label>Fecha de reserva</label><input id="newDate" type="date" onchange="selectedDate=toDateKey(this.value);render()">
+<label>Horario</label><select id="newTime"></select>
+<div class="hours" id="adminHours"></div>
+<button onclick="addSession()">Guardar en Supabase</button>
+</aside>
 
-    </div>
+<main id="center" class="card panel show">
+<section id="agenda" class="section active">
+<h2>Agenda por Fecha</h2>
+<div class="datebar">
+<button onclick="changeDay(-1)">◀ Día anterior</button>
+<input id="selectedDateInput" type="date" onchange="selectedDate=toDateKey(this.value);newDate.value=selectedDate;loadSessions()">
+<button onclick="changeDay(1)">Día siguiente ▶</button>
+</div>
+<div class="note">Esta vista muestra solo la fecha seleccionada. Las citas anteriores quedan guardadas en Historial.</div>
+<div id="agendaList"></div>
+</section>
 
-    <div class="right-panel">
-        <h3 class="right-title">Detalle Sesión</h3>
-        <div id="fichaContent" style="display:flex; flex-direction:column; gap:4px;">
-            <p class="empty-text">Selecciona cualquier cita operativa para desplegar el historial clínico rápido, estados y botones de gestión.</p>
-        </div>
-        
-        <div id="reagendaBox" style="display:none; margin-top:5px;">
-            <button class="btn-primary" id="btnReagendaMain" style="background:#4f46e5; width:100%; margin-bottom:12px;">🔄 Reagendar</button>
-            
-            <div class="btn-toggle-mode">
-                <div class="toggle-item online" id="tgOnline" onclick="setReagendaMode('Online')">💻 Online</div>
-                <div class="toggle-item presencial" id="tgPresencial" onclick="setReagendaMode('Presencial')">📍 Presencial</div>
-            </div>
-            
-            <input id="reValue" type="number" placeholder="Valor sesión ($)" style="margin-bottom:12px;">
-            <input id="reDate" type="date" onchange="loadQuickMoveHours()" style="margin-bottom:10px;">
-            
-            <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:6px;">Mover a bloques libres:</div>
-            <div class="quick-move-container" id="quickHoursContainer">
-                <span style="font-size:11px; color:var(--text-muted);">Selecciona fecha para ver horas disponibles...</span>
-            </div>
-        </div>
-    </div>
+<section id="solicitudes" class="section">
+<h2>Solicitudes online</h2>
+<div class="note">Aquí aparecen las solicitudes pendientes creadas desde Vista Paciente.</div>
+<div id="requestList"></div>
+</section>
+
+<section id="proximas" class="section"><h2>Próximas citas</h2><div id="futureList"></div></section>
+<section id="historial" class="section"><h2>Historial</h2><div class="note">Las citas de días anteriores no se borran. Quedan aquí como respaldo del profesional.</div><div id="historyList"></div></section>
+<section id="canceladas" class="section"><h2>Canceladas</h2><div id="cancelList"></div></section>
+
+<section id="pacientes" class="section">
+<h2>Base de Pacientes</h2>
+<div class="note">Esta lista sale desde las citas guardadas en Supabase.</div>
+<div id="patientList"></div>
+</section>
+
+<section id="estadisticas" class="section">
+<h2>Estadísticas e Ingresos</h2>
+<div class="stats">
+<div class="stat">Confirmadas<h2 id="stSessions">0</h2></div>
+<div class="stat">Pendientes<h2 id="stPending">0</h2></div>
+<div class="stat">Bloqueos<h2 id="stBlocks">0</h2></div>
+<div class="stat">Ingresos<h2 id="stMoney">$0</h2></div>
+</div>
+<div class="note">V6 calcula ingresos desde citas confirmadas. Cierres siguen locales hasta crear tabla propia.</div>
+<button onclick="generateDailyClose()">📊 Guardar cierre local</button>
+<button class="danger" onclick="clearClosures()">🗑️ Limpiar historial local</button>
+<div id="dailyClose"></div>
+<div class="stats"><div class="stat">Semana actual<h2 id="weekTotal">$0</h2></div><div class="stat">Mes actual<h2 id="monthTotal">$0</h2></div></div>
+</section>
+
+<section id="disponibilidad" class="section">
+<h2>Disponibilidad Actual</h2>
+<div class="note">Los botones grises están ocupados. Los rojos son bloqueos locales.</div>
+<div class="hours" id="freeHours"></div>
+</section>
+
+<section id="bloqueos" class="section">
+<h2>Bloquear Bloque Horario</h2>
+<label>Inicio</label><input id="blockStart" type="time" value="13:00">
+<label>Fin</label><input id="blockEnd" type="time" value="14:00">
+<input id="blockReason" placeholder="Motivo (ej: Almuerzo)">
+<button class="danger" onclick="addBlock()">Bloquear rango local</button>
+<div class="note">Los bloqueos siguen locales en V6 para no crear otra tabla todavía.</div>
+<div id="blockList"></div>
+</section>
+
+<section id="config" class="section">
+<h2>Configuración de Tarifas y Horarios</h2>
+<label>Valor Sesión Online ($)</label><input id="cfgOnline" type="number">
+<label>Valor Sesión Presencial ($)</label><input id="cfgPres" type="number">
+<label>Inicio jornada</label><input id="cfgStart" type="time">
+<label>Fin jornada</label><input id="cfgEnd" type="time">
+<label>Duración por paciente (minutos)</label><input id="cfgDur" type="number" min="10" step="5">
+<button onclick="saveConfig()">Actualizar Agenda</button>
+<div class="note">Configuración local en V6. Luego la podemos pasar a Supabase.</div>
+</section>
+
+<section id="pacienteWeb" class="section">
+<h2>🌐 Módulo de Reserva para el Paciente</h2>
+<div class="note">Este formulario crea solicitudes pendientes en Supabase.</div>
+<input id="pName" placeholder="Nombre completo">
+<input id="pPhone" placeholder="WhatsApp">
+<input id="pEmail" placeholder="Correo">
+<select id="pMode"><option>Online</option><option>Presencial</option></select>
+<label>Horario disponible</label><select id="pTime"></select>
+<div class="hours" id="patientHours"></div>
+<button onclick="patientReserve()" style="background:#27c7ff">Confirmar y Solicitar Hora</button>
+<div id="pMsg"></div>
+</section>
+
+<section id="adminLight" class="section">
+<h2>🛡️ Panel de Control del Administrador</h2>
+<div class="note">Admin LIGHT conectado a Supabase mediante la tabla <b>admin_config</b>.</div>
+
+<label>Estado de la Licencia</label>
+<select id="licenseState">
+<option value="active">Licencia Activa</option>
+<option value="inactive">Licencia Suspendida</option>
+</select>
+
+<label>Modo mantenimiento</label>
+<select id="maintenanceState">
+<option value="false">Mantenimiento Desactivado</option>
+<option value="true">Mantenimiento Activado</option>
+</select>
+
+<label>Mensaje global</label>
+<input id="globalMessage" placeholder="Ej: Sistema temporalmente en mantenimiento">
+
+<button onclick="saveLicense()">💾 Guardar Admin LIGHT en Supabase</button>
+<button class="warnBtn" onclick="loadAdminConfig()">🔄 Recargar Admin LIGHT</button>
+
+<div id="licenseBox"></div>
+</section>
+</main>
+
+<aside id="right" class="card panel show">
+<h2>Detalle de Selección</h2>
+<div id="detail">Selecciona una sesión de la agenda</div>
+<button onclick="openRe()">📅 Modificar / Reagendar</button>
+<button class="danger" onclick="cancelSelected()">❌ Cancelar cita</button>
+<div id="reBox" style="display:none">
+<h3>Reagendar</h3>
+<label>Nueva fecha</label><input id="reDate" type="date" onchange="reChosen='';render()">
+<label>Modalidad</label>
+<select id="reMode" onchange="suggestRePrice()"><option>Online</option><option>Presencial</option></select>
+<label>Valor acordado</label><input id="rePrice" type="number">
+<label>Asignar nuevo horario</label><div class="hours" id="reHours"></div>
+<button onclick="confirmRe()">Aplicar Cambio</button>
+</div>
+</aside>
 </div>
 
 <script>
-// CONEXIÓN DIRECTA A TU BASE DE DATOS ACTIVA DE SUPABASE
-const DB_URL = "https://kpkrlloxsubacruoxqlz.supabase.co"; 
-const DB_KEY = "sb_publishable_1zDD5Pgu92My50gkOHlt7Q_Dj1pjv5f"; 
+let db=null;
+let currentUserId=null;
+let currentEmail=null;
+let selectedDate=new Date().toISOString().slice(0,10);
 
-const _supabase = supabase.createClient(DB_URL, DB_KEY);
+let config=JSON.parse(localStorage.getItem('psiMasterConfigV6'))||{online:30000,pres:40000,start:'08:00',end:'18:00',dur:45};
+let sessions=[];
+let blocks=JSON.parse(localStorage.getItem('psiMasterBlocksV6'))||[{start:'13:00',end:'14:00',reason:'Colación'}];
+let adminConfig={id:null,licencia_activa:true,modo_mantenimiento:false,mensaje_global:''};
+let chosen='',selected=0,reChosen='';
 
-let userSession = null;
-let activeCitaId = null; 
-let currentReagendaMode = 'Online';
+const TABLE='citas_agenda';
 
-function switchTab(tabName) {
-    document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-    document.getElementById('view-' + tabName).classList.add('active');
-    
-    if(tabName === 'pacientes') loadPatientsList();
-    if(tabName === 'estadisticas') loadCommercialStats();
+function setStatus(msg,type='ok'){statusBox.innerHTML='<div class="'+(type==='err'?'err':'ok')+'">'+msg+'</div>'}
+function money(n){return '$'+Number(n||0).toLocaleString('es-CL')}
+function mins(t){let p=String(t||'00:00').split(':').map(Number);return p[0]*60+p[1]}
+function tm(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+function val(m){return m==='Online'?+config.online:+config.pres}
+function cleanStatus(v){
+  let s=String(v||'confirmed').toLowerCase().trim();
+  if(s==='confirmado') return 'confirmed';
+  if(s==='pendiente') return 'pending';
+  if(s==='cancelado'||s==='cancelada') return 'cancelled';
+  return s;
+}
+function toDateKey(v){
+  if(!v) return today();
+  let s=String(v).trim().substring(0,10);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  let m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if(m) return m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');
+  let d=new Date(s);
+  if(!isNaN(d)) return d.toISOString().slice(0,10);
+  return s;
+}
+function toTimeKey(v){
+  if(!v) return '08:00';
+  return String(v).trim().substring(0,5);
+}
+function dateNum(v){
+  return Number(toDateKey(v).replaceAll('-',''));
+}
+function dateTimeNum(s){
+  return new Date(toDateKey(s.date)+'T'+toTimeKey(s.time)+':00').getTime();
+}
+function confirmed(){return sessions.filter(s=>s.status==='confirmed')}
+function pending(){return sessions.filter(s=>s.status==='pending')}
+function activeSessions(){return sessions.filter(s=>s.status!=='cancelled')}
+function bySelectedDate(){return activeSessions().filter(s=>toDateKey(s.date)===toDateKey(selectedDate))}
+function confirmedBySelected(){return confirmed().filter(s=>toDateKey(s.date)===toDateKey(selectedDate))}
+function futureSessions(){let h=dateNum(today());return activeSessions().filter(s=>dateNum(s.date)>h).sort((a,b)=>dateTimeNum(a)-dateTimeNum(b))}
+function historySessions(){let h=dateNum(today());return sessions.filter(s=>dateNum(s.date)<h).sort((a,b)=>dateTimeNum(b)-dateTimeNum(a))}
+function cancelled(){return sessions.filter(s=>s.status==='cancelled')}
+function slots(){let a=[],step=Math.max(10,+config.dur||45);for(let m=mins(config.start);m+step<=mins(config.end);m+=step)a.push(tm(m));return a}
+function blocked(t){let x=mins(t);return blocks.some(b=>x>=mins(b.start)&&x<mins(b.end))}
+function busy(t,skip=-1,date=selectedDate){let d=toDateKey(date);return activeSessions().some((s)=>sessions.indexOf(s)!==skip&&toDateKey(s.date)===d&&toTimeKey(s.time)===toTimeKey(t))}
+function free(t,skip=-1,date=selectedDate){return !busy(t,skip,date)&&!blocked(t)}
+function today(){return new Date().toISOString().slice(0,10)}
+function addDays(dateStr,n){let d=new Date(dateStr+'T00:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function mobile(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));document.getElementById(id).classList.add('show')}
+function show(id){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');mobile('center');render()}
+function changeDay(n){selectedDate=addDays(selectedDate,n);newDate.value=selectedDate;selectedDateInput.value=selectedDate;loadSessions()}
+function saveLocal(){localStorage.setItem('psiMasterConfigV6',JSON.stringify(config));localStorage.setItem('psiMasterBlocksV6',JSON.stringify(blocks))}
+
+window.onload=()=> {
+  supabaseUrl.value=localStorage.getItem('psi_supabase_url')||'';
+  supabaseKey.value=localStorage.getItem('psi_supabase_key')||'';
+  cfgOnline.value=config.online;cfgPres.value=config.pres;cfgStart.value=config.start;cfgEnd.value=config.end;cfgDur.value=config.dur; newDate.value=selectedDate; selectedDateInput.value=selectedDate; if(typeof reDate!=='undefined') reDate.value=selectedDate;
+  if(supabaseUrl.value && supabaseKey.value) connectSupabase();
+  else render();
+};
+
+async function connectSupabase(){
+  const url=supabaseUrl.value.trim();
+  const key=supabaseKey.value.trim();
+  if(!url||!key){setStatus('Falta URL o ANON KEY.','err');return}
+  localStorage.setItem('psi_supabase_url',url);
+  localStorage.setItem('psi_supabase_key',key);
+  try{
+    db=window.supabase.createClient(url,key);
+    const {data:{user}}=await db.auth.getUser();
+    currentUserId=user ? user.id : null;
+    currentEmail=user ? user.email : null;
+    await loadAll();
+    setStatus('Supabase conectado. Citas cargadas: '+sessions.length);
+  }catch(e){
+    setStatus('Error conectando:\n'+e.message,'err');
+  }
 }
 
-async function checkAuth() {
-    let { data: { session } } = await _supabase.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; } 
-    else {
-        userSession = session;
-        loadProfileData();
-        document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
-        loadAppointments();
+async function loadAll(){
+  await loadSessions();
+  await loadAdminConfig();
+}
+
+function normalize(row){
+  return {
+    id: row.id,
+    profesional_id: row.profesional_id || row.user_id || currentUserId,
+    name: row.paciente_nombre || row.nombre_paciente || row.nombre || row.name || 'Paciente',
+    phone: row.paciente_telefono || row.telefono_paciente || row.telefono || row.phone || '-',
+    email: row.paciente_email || row.email || '',
+    date: toDateKey(row.fecha || row.fecha_cita || today()),
+    time: toTimeKey(row.hora || row.hora_cita || row.time || '08:00'),
+    mode: row.modalidad || row.mode || 'Online',
+    value: Number(row.valor || row.valor_pagado || row.value || 0),
+    status: cleanStatus(row.estado || row.status || 'confirmed')
+  };
+}
+
+function toDb(s){
+  let row={
+    paciente_nombre:s.name,
+    paciente_telefono:s.phone||'',
+    paciente_email:s.email||'',
+    fecha:toDateKey(s.date||today()),
+    hora:toTimeKey(s.time),
+    modalidad:s.mode,
+    valor:Number(s.value||0),
+    estado:cleanStatus(s.status),
+    nombre_paciente:s.name,
+    telefono_paciente:s.phone||'',
+    fecha_cita:toDateKey(s.date||today()),
+    hora_cita:toTimeKey(s.time),
+    valor_pagado:Number(s.value||0),
+    status:cleanStatus(s.status)
+  };
+  if(currentUserId) row.profesional_id=currentUserId;
+  return row;
+}
+
+async function loadSessions(){
+  if(!db){setStatus('Primero conecta Supabase.','err');return}
+  let query=db.from(TABLE).select('*').order('fecha',{ascending:true}).order('hora',{ascending:true});
+  if(currentUserId) query=query.eq('profesional_id',currentUserId);
+  const {data,error}=await query;
+  if(error){setStatus('Error cargando citas:\n'+error.message+'\nCódigo: '+(error.code||''),'err');return}
+  sessions=(data||[]).map(normalize);
+  render();
+}
+
+async function ensureAdminRow(){
+  if(!db) return null;
+  const {data,error}=await db.from('admin_config').select('*').limit(1);
+  if(error){
+    setStatus('Admin LIGHT: no se pudo leer admin_config.\n'+error.message,'err');
+    return null;
+  }
+  if(data && data.length>0) return data[0];
+
+  // No intentamos insertar aquí para evitar bloqueo RLS.
+  // Si la tabla está vacía, usamos configuración segura por defecto.
+  return {id:null, licencia_activa:true, modo_mantenimiento:false, mensaje_global:''};
+}
+
+async function loadAdminConfig(){
+  if(!db){
+    setStatus('Conecta Supabase primero para cargar Admin LIGHT.','err');
+    return;
+  }
+  const row=await ensureAdminRow();
+  if(row){
+    adminConfig={
+      id:row.id||null,
+      licencia_activa:row.licencia_activa!==false,
+      modo_mantenimiento:row.modo_mantenimiento===true,
+      mensaje_global:row.mensaje_global||''
+    };
+    render();
+  }
+}
+
+async function insertSession(s){
+  if(!db){setStatus('Conecta Supabase primero.','err');return false}
+  const {data,error}=await db.from(TABLE).insert([toDb(s)]).select();
+  if(error){if((error.message||'').includes('duplicate')||(error.code||'')==='23505'){setStatus('⚠️ Esa hora ya está ocupada. Selecciona otro horario.','err');alert('⚠️ Esa hora ya está ocupada. Selecciona otro horario.');await loadSessions();return false}setStatus('Error guardando:\n'+error.message+'\nCódigo: '+(error.code||''),'err');return false}
+  if(data && data[0]) s.id=data[0].id;
+  setStatus('Guardado correctamente en Supabase.');
+  return true;
+}
+
+async function updateSession(i,patch){
+  if(!sessions[i])return;
+  let updated={...sessions[i],...patch};
+  if(!db || !updated.id){Object.assign(sessions[i],patch);render();return}
+  const {error}=await db.from(TABLE).update(toDb(updated)).eq('id',updated.id);
+  if(error){if((error.message||'').includes('duplicate')||(error.code||'')==='23505'){setStatus('⚠️ Esa hora ya está ocupada. Selecciona otro horario.','err');alert('⚠️ Esa hora ya está ocupada. Selecciona otro horario.');await loadSessions();return}setStatus('Error actualizando:\n'+error.message+'\nCódigo: '+(error.code||''),'err');return}
+  Object.assign(sessions[i],patch);
+  setStatus('Cambio actualizado en Supabase.');
+  render();
+}
+
+function fillTimeSelect(selectEl, skip=-1, date=selectedDate){
+  if(!selectEl)return;
+  let current=selectEl.value;
+  selectEl.innerHTML='<option value="">Selecciona horario</option>';
+  slots().forEach(t=>{
+    if(free(t,skip,date)){
+      let opt=document.createElement('option');
+      opt.value=t;
+      opt.textContent=t;
+      selectEl.appendChild(opt);
     }
+  });
+  if(current && [...selectEl.options].some(o=>o.value===current)) selectEl.value=current;
 }
 
-async function loadProfileData() {
-    let { data } = await _supabase.from('profesionales').select('nombre').eq('id', userSession.user.id).single();
-    if (data) { document.getElementById('topNavName').textContent = data.nombre; }
+function box(el,cb,active,onlyFree=false,skip=-1,date=selectedDate){
+  el.innerHTML='';
+  slots().forEach(t=>{
+    if(onlyFree&&!free(t,skip,date))return;
+    let b=document.createElement('button');
+    b.className='hour '+(blocked(t)?'blocked ':busy(t,skip,date)?'busy ':'')+(active===t?'active':'');
+    b.textContent=t+(blocked(t)?' 🔒':busy(t,skip,date)?' ✅':'');
+    if(free(t,skip,date)||active===t)b.onclick=()=>cb(t);
+    el.appendChild(b)
+  });
+  if(!el.innerHTML)el.innerHTML='<div class="note">No hay horas disponibles.</div>'
 }
 
-async function loadAppointments() {
-    let d = filterDate.value;
-    if(!d) return;
-    let { data } = await _supabase.from('citas_agenda').select('*').eq('profesional_id', userSession.user.id).eq('fecha_cita', d).not('status', 'eq', 'cancelled').order('hora_cita');
-    
-    let html = '';
-    if(data && data.length > 0) {
-        data.forEach(c => {
-            let isOnline = c.modalidad === 'Online';
-            html += `
-            <div class="hour-block">
-                <div>
-                    <div class="hour-time">${c.hora_cita.substring(0,5)}</div>
-                    <div class="hour-patient">${c.nombre_paciente}</div>
-                    <span class="mode-badge ${isOnline ? 'online' : 'presencial'}">${c.modalidad}</span>
-                </div>
-                <button class="btn-ver" onclick="selectCita('${c.id}')">Ver</button>
-            </div>`;
-        });
-    } else {
-        html = '<div class="empty-text">No hay citas registradas para este día en tu agenda.</div>';
-    }
-    blocksContainer.innerHTML = html;
+function render(){
+  sessions.sort((a,b)=>dateTimeNum(a)-dateTimeNum(b));
+
+  selectedDateInput.value=selectedDate; newDate.value=selectedDate;
+  fillTimeSelect(newTime,-1,newDate.value||selectedDate);
+  fillTimeSelect(pTime,-1,selectedDate);
+  box(adminHours,t=>{chosen=t;newTime.value=t;render()},chosen,true,-1,newDate.value||selectedDate);
+  box(patientHours,t=>{chosen=t;render()},chosen,true);
+  box(freeHours,t=>{},'',false,-1,selectedDate);
+  box(reHours,t=>{reChosen=t;render()},reChosen,true,selected,(typeof reDate!=='undefined'&&reDate.value)||selectedDate);
+
+  agendaList.innerHTML='';
+  confirmedBySelected().forEach(s=>{
+    let i=sessions.indexOf(s);
+    agendaList.innerHTML+=`<div class="slot ${s.mode==='Presencial'?'presencial':''} ${i===selected?'selected':''}"><div><b>${s.time}</b><br>${s.name}<br><span class="badge ${s.mode==='Online'?'online':'pres'}">${s.mode}</span></div><button class="miniBtn" onclick="selectSession(${i})">Gestionar</button></div>`;
+  });
+  blocks.forEach(b=>agendaList.innerHTML+=`<div class="slot blocked"><div><b>${b.start} - ${b.end}</b><br>${b.reason}<br><span class="badge block">Bloqueado</span></div></div>`);
+  if(!agendaList.innerHTML) agendaList.innerHTML='<div class="note">No hay citas confirmadas.</div>';
+
+  requestList.innerHTML=pending().length?'':'<div class="note">No hay solicitudes pendientes.</div>';
+  pending().forEach(s=>{
+    let i=sessions.indexOf(s);
+    requestList.innerHTML+=`<div class="slot pending"><div><b>${s.time}</b><br>${s.name}<br><span class="badge pendingB">Pendiente</span><br>${s.phone||''} · ${s.mode}</div><div><button class="okBtn" onclick="acceptRequest(${i})">Aceptar</button><button class="danger" onclick="rejectRequest(${i})">Rechazar</button></div></div>`;
+  });
+
+  
+  if(typeof futureList!=='undefined') futureList.innerHTML=futureSessions().length?futureSessions().map(s=>`<div class="slot"><div><b>${s.date} · ${s.time}</b><br>${s.name}<br><span class="badge ${s.mode==='Online'?'online':'pres'}">${s.mode}</span></div><button class="miniBtn" onclick="selectSession(${sessions.indexOf(s)})">Gestionar</button></div>`).join(''):'<div class="note">No hay próximas citas.</div>';
+  if(typeof historyList!=='undefined') historyList.innerHTML=historySessions().length?historySessions().map(s=>`<div class="slot"><div><b>${s.date} · ${s.time}</b><br>${s.name}<br><span class="badge ${s.mode==='Online'?'online':'pres'}">${s.mode}</span></div><button class="miniBtn" onclick="selectSession(${sessions.indexOf(s)})">Ver</button></div>`).join(''):'<div class="note">No hay historial todavía.</div>';
+  if(typeof cancelList!=='undefined') cancelList.innerHTML=cancelled().length?cancelled().map(s=>`<div class="slot cancelled"><div><b>${s.date} · ${s.time}</b><br>${s.name}<br><span class="badge cancelB">Cancelada</span></div><button class="miniBtn" onclick="selectSession(${sessions.indexOf(s)})">Ver</button></div>`).join(''):'<div class="note">No hay citas canceladas.</div>';
+  
+  let unique = {};
+  confirmed().forEach(s=>{ unique[(s.name||'')+'|'+(s.phone||'')]=s; });
+  let patients=Object.values(unique);
+  patientList.innerHTML=patients.length?patients.map(s=>`<div class="slot"><div><b>${s.name}</b><br>📞 ${s.phone||'-'}<br>✉️ ${s.email||'-'}<br>${s.mode}</div></div>`).join(''):'<div class="note">No hay pacientes confirmados.</div>';
+
+  blockList.innerHTML=blocks.map((b,i)=>`<div class="slot blocked"><div><b>${b.start} - ${b.end}</b><br>${b.reason}</div><button class="danger" onclick="removeBlock(${i})">Quitar</button></div>`).join('');
+  if(!blockList.innerHTML) blockList.innerHTML='<div class="note">No hay bloqueos creados.</div>';
+
+  stSessions.textContent=confirmed().length;
+  stPending.textContent=pending().length;
+  stBlocks.textContent=blocks.length;
+  stMoney.textContent=money(confirmed().reduce((a,s)=>a+(+s.value||0),0));
+
+  let closes=JSON.parse(localStorage.getItem('psiMasterClosuresV6'))||[];
+  dailyClose.innerHTML=closes.length?closes.map(c=>`<div class="slot"><div><b>${c.date}</b></div><div><b>${money(c.total)}</b></div></div>`).join(''):'<div class="note">No existen cierres guardados todavía.</div>';
+  weekTotal.textContent=money(closes.reduce((a,c)=>a+c.total,0));
+  monthTotal.textContent=money(closes.reduce((a,c)=>a+c.total,0));
+
+  licenseState.value=adminConfig.licencia_activa?'active':'inactive';
+  maintenanceState.value=adminConfig.modo_mantenimiento?'true':'false';
+  globalMessage.value=adminConfig.mensaje_global||'';
+
+  licenseBox.innerHTML=adminConfig.licencia_activa
+    ? '<div class="slot presencial"><div><b>Licencia activa</b><br>Admin LIGHT conectado a Supabase.</div></div>'
+    : '<div class="slot blocked"><div><b>Aplicación suspendida</b><br>'+(adminConfig.mensaje_global||'Sistema suspendido por administración.')+'</div></div>';
+
+  if(adminConfig.modo_mantenimiento){
+    licenseBox.innerHTML+='<div class="slot pending"><div><b>Modo mantenimiento activo</b><br>'+(adminConfig.mensaje_global||'Sistema en mantenimiento.')+'</div></div>';
+  }
+
+  if(sessions[selected])selectSession(selected,false);
+  else detail.innerHTML='Selecciona una sesión de la agenda';
+  saveLocal();
 }
 
-async function selectCita(id) {
-    activeCitaId = id;
-    let { data: c } = await _supabase.from('citas_agenda').select('*').eq('id', id).single();
-    if(!c) return;
-
-    fichaContent.innerHTML = `
-        <div class="det-row"><span class="det-label">Paciente:</span> ${c.nombre_paciente}</div>
-        <div class="det-row"><span class="det-label">Horario:</span> ${c.hora_cita.substring(0,5)}</div>
-        <div class="det-row"><span class="det-label">Modalidad:</span> ${c.modalidad}</div>
-        <div class="det-row"><span class="det-label">Valor:</span> $${Number(c.valor_pagado || 0).toLocaleString('es-CL')}</div>
-        <textarea id="fichaNotes" placeholder="Evolución de la sesión..." style="height:60px; resize:none; margin-top:5px;">${c.notas || ''}</textarea>
-        <button onclick="saveNotes()" style="background:#10b981; color:white; border:0; padding:8px; border-radius:10px; font-weight:700; cursor:pointer; font-size:12px; margin-top:5px;">Guardar Notas Clínicas 📝</button>
-    `;
-    
-    document.getElementById('reagendaBox').style.display = 'block';
-    document.getElementById('reValue').value = c.valor_pagado;
-    document.getElementById('reDate').value = c.fecha_cita;
-    setReagendaMode(c.modalidad);
-    loadQuickMoveHours();
+function ensureActive(){
+  if(adminConfig.licencia_activa===false){
+    alert(adminConfig.mensaje_global||'Licencia suspendida por administración.');
+    return false;
+  }
+  if(adminConfig.modo_mantenimiento===true){
+    alert(adminConfig.mensaje_global||'Sistema temporalmente en mantenimiento.');
+    return false;
+  }
+  return true;
 }
 
-function setReagendaMode(mode) {
-    currentReagendaMode = mode;
-    document.getElementById('tgOnline').classList.remove('active');
-    document.getElementById('tgPresencial').classList.remove('active');
-    if(mode === 'Online') document.getElementById('tgOnline').classList.add('active');
-    else document.getElementById('tgPresencial').classList.add('active');
+function selectSession(i,r=true){
+  selected=i;let s=sessions[i];if(!s)return;
+  detail.innerHTML=`<p><b>Paciente:</b> ${s.name}</p><p><b>Teléfono:</b> ${s.phone||'-'}</p><p><b>Correo:</b> ${s.email||'-'}</p><p><b>Fecha:</b> ${s.date}</p><p><b>Horario:</b> ${s.time}</p><p><b>Modalidad:</b> ${s.mode}</p><p><b>Valor:</b> ${money(s.value)}</p><p><b>Estado:</b> ${s.status}</p>`;
+  if(r)mobile('right');
 }
 
-async function loadQuickMoveHours() {
-    let selDate = reDate.value;
-    if(!selDate) return;
-    
-    let { data: cfg } = await _supabase.from('configuracion_horarios').select('horas_disponibles').eq('profesional_id', userSession.user.id).single();
-    let { data: ocupadas } = await _supabase.from('citas_agenda').select('hora_cita').eq('profesional_id', userSession.user.id).eq('fecha_cita', selDate).not('status', 'eq', 'cancelled');
-    
-    let base = cfg && cfg.horas_disponibles ? (typeof cfg.horas_disponibles === 'string' ? JSON.parse(cfg.horas_disponibles) : cfg.horas_disponibles) : ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
-    let busy = ocupadas ? ocupadas.map(o => o.hora_cita.substring(0,5)) : [];
-    let libres = base.filter(h => !busy.includes(h));
-    
-    let html = '';
-    libres.slice(0, 5).forEach(hr => {
-        html += `<button class="btn-quick-move" onclick="executeMove('${hr}')">Mover a ${hr}</button>`;
-    });
-    if(libres.length === 0) html = '<span style="font-size:11px; color:red;">No hay bloques disponibles</span>';
-    quickHoursContainer.innerHTML = html;
+async function addSession(){
+  if(!ensureActive())return;
+  let name=newName.value.trim();
+  let selectedTime=chosen||newTime.value;
+  let date=toDateKey(newDate.value||selectedDate);
+  if(!name||!selectedTime||!date){alert('Completa paciente, fecha y hora');return}
+  if(!free(selectedTime,-1,date)){alert('⚠️ Esa hora ya está ocupada para esa fecha.');return}
+  let s={name,phone:newPhone.value.trim()||'Manual',email:newEmail.value.trim(),date:date,time:selectedTime,mode:newMode.value,value:val(newMode.value),status:'confirmed'};
+  const ok=await insertSession(s);
+  if(!ok)return;
+  sessions.push(s);
+  selectedDate=date;
+  newName.value='';newPhone.value='';newEmail.value='';newTime.value='';chosen='';
+  setStatus('Reserva manual guardada para '+date+' a las '+selectedTime+'.');
+  render();
 }
 
-async function executeMove(chosenHour) {
-    let nDate = reDate.value;
-    let nVal = parseInt(reValue.value) || 0;
-    
-    let { error } = await _supabase.from('citas_agenda').update({
-        fecha_cita: nDate,
-        hora_cita: chosenHour + ':00',
-        modalidad: currentReagendaMode,
-        valor_pagado: nVal
-    }).eq('id', activeCitaId);
-    
-    if(!error) {
-        alert("¡Cita modificada y reagendada correctamente!");
-        document.getElementById('reagendaBox').style.display = 'none';
-        fichaContent.innerHTML = '<p class="empty-text">Selecciona cualquier cita operativa para desplegar el historial clínico rápido.</p>';
-        loadAppointments();
-    }
+
+async function patientReserve(){
+  if(!ensureActive())return;
+  let name=pName.value.trim(),phone=pPhone.value.trim();
+  let selectedTime=chosen||pTime.value;
+  let date=toDateKey(selectedDateInput.value||selectedDate);
+  if(!name||!selectedTime||!date){alert('Completa nombre, fecha y hora');return}
+  if(!free(selectedTime,-1,date)){alert('⚠️ Esa hora ya está ocupada para esa fecha.');return}
+  let s={name,phone,email:pEmail.value.trim(),date:date,time:selectedTime,mode:pMode.value,value:val(pMode.value),status:'pending'};
+  const ok=await insertSession(s);
+  if(!ok)return;
+  sessions.push(s);
+  pName.value='';pPhone.value='';pEmail.value='';pTime.value='';
+  pMsg.innerHTML='<div class="ok">✅ Solicitud enviada con éxito para '+date+' a las '+selectedTime+'.</div>';
+  chosen='';
+  render();
 }
 
-async function saveNotes() {
-    let txt = document.getElementById('fichaNotes').value;
-    await _supabase.from('citas_agenda').update({ notas: txt }).eq('id', activeCitaId);
-    alert("Notas guardadas.");
+
+async function acceptRequest(i){await updateSession(i,{status:'confirmed'});selected=i;if(sessions[i])selectedDate=toDateKey(sessions[i].date);show('agenda')}
+async function rejectRequest(i){await updateSession(i,{status:'cancelled'})}
+
+function addBlock(){if(!ensureActive())return;let s=blockStart.value,e=blockEnd.value;if(mins(e)<=mins(s)){alert('El fin debe ser mayor que el inicio');return}blocks.push({start:s,end:e,reason:blockReason.value||'Bloqueado'});blockReason.value='';render()}
+function removeBlock(i){blocks.splice(i,1);render()}
+function openRe(){if(!ensureActive())return;let s=sessions[selected];if(!s){alert('Selecciona una cita primero.');return}reBox.style.display='block';reChosen='';reDate.value=s.date;reMode.value=s.mode;rePrice.value=s.value;render()}
+function suggestRePrice(){let current=Number(rePrice.value||0);if(current===Number(config.online)||current===Number(config.pres)||current===0)rePrice.value=val(reMode.value)}
+async function confirmRe(){let date=toDateKey(reDate.value||selectedDate);if(!reChosen){alert('Selecciona nueva hora');return}if(!free(reChosen,selected,date)){alert('⚠️ Esa hora ya está ocupada.');return}await updateSession(selected,{date:date,time:reChosen,mode:reMode.value,value:Number(rePrice.value||val(reMode.value))});reChosen='';reBox.style.display='none'}
+async function cancelSelected(){if(!ensureActive())return;if(!sessions[selected]){alert('Selecciona una cita primero.');return}if(confirm('¿Cancelar sesión?'))await updateSession(selected,{status:'cancelled'})}
+function saveConfig(){let d=+cfgDur.value;if(!d||d<10){alert('Duración inválida');return}config={online:+cfgOnline.value,pres:+cfgPres.value,start:cfgStart.value,end:cfgEnd.value,dur:d};chosen='';render();alert('Configuración guardada')}
+
+async function saveLicense(){
+  if(!db){
+    alert('Conecta Supabase primero.');
+    return;
+  }
+
+  const payload={
+    licencia_activa:licenseState.value==='active',
+    modo_mantenimiento:maintenanceState.value==='true',
+    mensaje_global:globalMessage.value.trim()
+  };
+
+  if(!adminConfig.id){
+    alert('Admin LIGHT no tiene fila inicial en Supabase. Ya puedes usar la agenda; luego revisamos esta configuración.');
+    return;
+  }
+
+  let result=await db.from('admin_config').update(payload).eq('id',adminConfig.id).select();
+
+  if(result.error){
+    alert('Error Admin LIGHT: '+result.error.message);
+    return;
+  }
+
+  const saved=result.data && result.data[0] ? result.data[0] : payload;
+
+  adminConfig={
+    id:saved.id||adminConfig.id||null,
+    licencia_activa:saved.licencia_activa!==false,
+    modo_mantenimiento:saved.modo_mantenimiento===true,
+    mensaje_global:saved.mensaje_global||''
+  };
+
+  render();
+  alert('Admin LIGHT guardado en Supabase.');
 }
 
-async function createManualAppointment() {
-    let name = manName.value.trim(), mode = manMode.value, time = manTime.value, d = filterDate.value;
-    if(!name || !time) { alert("Completa el nombre y la hora de la reserva."); return; }
-    
-    let { error } = await _supabase.from('citas_agenda').insert([{
-        profesional_id: userSession.user.id,
-        nombre_paciente: name,
-        fecha_cita: d,
-        hora_cita: time + ':00',
-        modalidad: mode,
-        status: 'confirmed',
-        estado_pago: 'pendiente'
-    }]);
-
-    if(!error) {
-        manName.value = ''; manTime.value = '';
-        loadAppointments();
-    }
-}
-
-async function loadPatientsList() {
-    let { data } = await _supabase.from('citas_agenda').select('nombre_paciente, fecha_cita, notas').eq('profesional_id', userSession.user.id);
-    let html = '<ul style="padding-left:20px; margin:0;">';
-    if(data && data.length > 0) {
-        let exact = [...new Set(data.map(x => x.nombre_paciente))];
-        exact.forEach(p => { html += `<li style="margin-bottom:8px;"><strong>${p}</strong></li>`; });
-    } else { html += '<li>No hay pacientes aún.</li>'; }
-    html += '</ul>';
-    patientsContainer.innerHTML = html;
-}
-
-async function loadCommercialStats() {
-    let { data } = await _supabase.from('citas_agenda').select('modalidad, valor_pagado').eq('profesional_id', userSession.user.id);
-    if(!data) return;
-    let total = data.length;
-    let ingresos = data.reduce((acc,curr) => acc + (Number(curr.valor_pagado) || 0), 0);
-    let online = data.filter(c => c.modalidad === 'Online').length;
-    document.getElementById('stTotalCitas').textContent = total;
-    document.getElementById('stIngresos').textContent = `$${ingresos.toLocaleString('es-CL')}`;
-    document.getElementById('stPctOnline').textContent = `${total > 0 ? Math.round((online/total)*100) : 0}%`;
-}
-
-async function logout() { await _supabase.auth.signOut(); window.location.href = 'index.html'; }
-checkAuth();
+function generateDailyClose(){let date=new Date().toLocaleDateString('es-CL');let total=confirmed().reduce((a,s)=>a+(+s.value||0),0);let closes=JSON.parse(localStorage.getItem('psiMasterClosuresV6'))||[];let exists=closes.find(c=>c.date===date);if(exists)exists.total=total;else closes.push({date,total});localStorage.setItem('psiMasterClosuresV6',JSON.stringify(closes));alert('Cierre local guardado');render()}
+function clearClosures(){if(confirm('¿Borrar todos los cierres diarios?')){localStorage.removeItem('psiMasterClosuresV6');render()}}
 </script>
 </body>
 </html>
-
