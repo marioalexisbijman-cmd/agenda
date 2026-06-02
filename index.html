@@ -52,10 +52,10 @@ button:active{transform:scale(.98)}
 <div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">MASTER V6 · Estable</div></div></div>
 
 <div class="note"><b>Conexión Supabase</b><br>Usa tu misma URL y anon public key.</div>
-<input id="supabaseUrl" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
-<input id="supabaseKey" placeholder="SUPABASE ANON PUBLIC KEY">
-<button onclick="connectSupabase()">🔌 Conectar / Cargar</button>
-<button class="warnBtn" onclick="loadAll()">🔄 Recargar desde Supabase</button>
+<input id="supabaseUrl" style="display:none" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
+<input id="supabaseKey" style="display:none" placeholder="SUPABASE ANON PUBLIC KEY">
+<button style="display:none" onclick="connectSupabase()">🔌 Conectar / Cargar</button>
+<button style="display:none" class="warnBtn" onclick="loadAll()">🔄 Recargar desde Supabase</button>
 <div id="statusBox"></div>
 
 <div class="menu">
@@ -273,18 +273,18 @@ function show(id){document.querySelectorAll('.section').forEach(s=>s.classList.r
 function changeDay(n){selectedDate=addDays(selectedDate,n);newDate.value=selectedDate;selectedDateInput.value=selectedDate;loadSessions()}
 function saveLocal(){localStorage.setItem('psiMasterConfigV6',JSON.stringify(config));localStorage.setItem('psiMasterBlocksV6',JSON.stringify(blocks))}
 
+const SUPABASE_URL='https://kpkrlloxsubacruoxqlz.supabase.co';
+const SUPABASE_KEY='sb_publishable_1zDD5Pgu92My50gkOHlt7Q_Dj1pjv5f';
+
 window.onload=()=> {
-  supabaseUrl.value=localStorage.getItem('psi_supabase_url')||'';
-  supabaseKey.value=localStorage.getItem('psi_supabase_key')||'';
+
   cfgOnline.value=config.online;cfgPres.value=config.pres;cfgStart.value=config.start;cfgEnd.value=config.end;cfgDur.value=config.dur; newDate.value=selectedDate; selectedDateInput.value=selectedDate; if(typeof reDate!=='undefined') reDate.value=selectedDate;
-  if(supabaseUrl.value && supabaseKey.value) connectSupabase();
-  else render();
+  connectSupabase();
 };
 
 async function connectSupabase(){
-  const url=supabaseUrl.value.trim();
-  const key=supabaseKey.value.trim();
-  if(!url||!key){setStatus('Falta URL o ANON KEY.','err');return}
+  const url=SUPABASE_URL;
+  const key=SUPABASE_KEY;
   localStorage.setItem('psi_supabase_url',url);
   localStorage.setItem('psi_supabase_key',key);
   try{
@@ -601,3 +601,4 @@ function clearClosures(){if(confirm('¿Borrar todos los cierres diarios?')){loca
 </script>
 </body>
 </html>
+
