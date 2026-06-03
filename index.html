@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>PsiAgenda MASTER V6 Estable</title>
+<title>PsiAgenda MASTER V7 Operativa</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -49,7 +49,7 @@ button:active{transform:scale(.98)}
 
 <div class="app">
 <aside id="left" class="card panel show">
-<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">MASTER V6 · Estable</div></div></div>
+<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">MASTER V7 · Operativa</div></div></div>
 
 <div class="note"><b>Conexión Supabase</b><br>Usa tu misma URL y anon public key.</div>
 <input id="supabaseUrl" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
@@ -229,20 +229,35 @@ function tm(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).
 function val(m){return m==='Online'?+config.online:+config.pres}
 function cleanStatus(v){
   let s=String(v||'confirmed').toLowerCase().trim();
-  if(s==='confirmado') return 'confirmed';
-  if(s==='pendiente') return 'pending';
-  if(s==='cancelado'||s==='cancelada') return 'cancelled';
+  if(s==='confirmado'||s==='confirmed'||s==='confirmada') return 'confirmed';
+  if(s==='pendiente'||s==='pending') return 'pending';
+  if(s==='cancelado'||s==='cancelada'||s==='cancelled'||s==='canceled') return 'cancelled';
   return s;
 }
 function toDateKey(v){
   if(!v) return today();
-  let s=String(v).trim().substring(0,10);
+  let raw=String(v).trim();
+  let s=raw.substring(0,10);
   if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   let m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
   if(m) return m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');
-  let d=new Date(s);
+
+  let meses={
+    enero:'01', febrero:'02', marzo:'03', abril:'04', mayo:'05', junio:'06',
+    julio:'07', agosto:'08', septiembre:'09', setiembre:'09',
+    octubre:'10', noviembre:'11', diciembre:'12'
+  };
+  let low=raw.toLowerCase();
+  let e=low.match(/(\d{1,2})\s+de\s+([a-záéíóúñ]+)\s+de\s+(\d{4})/);
+  if(e){
+    let mesTxt=e[2].normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    let mes=meses[mesTxt];
+    if(mes) return e[3]+'-'+mes+'-'+String(e[1]).padStart(2,'0');
+  }
+
+  let d=new Date(raw);
   if(!isNaN(d)) return d.toISOString().slice(0,10);
-  return s;
+  return raw;
 }
 function toTimeKey(v){
   if(!v) return '08:00';
@@ -273,9 +288,12 @@ function show(id){document.querySelectorAll('.section').forEach(s=>s.classList.r
 function changeDay(n){selectedDate=addDays(selectedDate,n);newDate.value=selectedDate;selectedDateInput.value=selectedDate;loadSessions()}
 function saveLocal(){localStorage.setItem('psiMasterConfigV6',JSON.stringify(config));localStorage.setItem('psiMasterBlocksV6',JSON.stringify(blocks))}
 
+const SUPABASE_URL_FIJA='https://kpkrlloxsubacruoxqlz.supabase.co';
+const SUPABASE_KEY_FIJA='sb_publishable_1zDD5Pgu92My50gkOHlt7Q_Dj1pjv5f';
+
 window.onload=()=> {
-  supabaseUrl.value=localStorage.getItem('psi_supabase_url')||'';
-  supabaseKey.value=localStorage.getItem('psi_supabase_key')||'';
+  supabaseUrl.value=localStorage.getItem('psi_supabase_url')||SUPABASE_URL_FIJA;
+  supabaseKey.value=localStorage.getItem('psi_supabase_key')||SUPABASE_KEY_FIJA;
   cfgOnline.value=config.online;cfgPres.value=config.pres;cfgStart.value=config.start;cfgEnd.value=config.end;cfgDur.value=config.dur; newDate.value=selectedDate; selectedDateInput.value=selectedDate; if(typeof reDate!=='undefined') reDate.value=selectedDate;
   if(supabaseUrl.value && supabaseKey.value) connectSupabase();
   else render();
@@ -334,6 +352,7 @@ function toDb(s){
     fecha_cita:toDateKey(s.date||today()),
     hora_cita:toTimeKey(s.time),
     valor_pagado:Number(s.value||0),
+    estado_pago:'pendiente',
     status:cleanStatus(s.status)
   };
   if(currentUserId) row.profesional_id=currentUserId;
@@ -342,11 +361,21 @@ function toDb(s){
 
 async function loadSessions(){
   if(!db){setStatus('Primero conecta Supabase.','err');return}
-  let query=db.from(TABLE).select('*').order('fecha',{ascending:true}).order('hora',{ascending:true});
-  if(currentUserId) query=query.eq('profesional_id',currentUserId);
+
+  // V7 OPERATIVA:
+  // La reserva pública guarda solicitudes con profesional_id = NULL.
+  // Por eso cargamos todos los registros visibles de citas_agenda,
+  // sin filtrar por profesional_id.
+  let query=db.from(TABLE).select('*');
+
   const {data,error}=await query;
-  if(error){setStatus('Error cargando citas:\n'+error.message+'\nCódigo: '+(error.code||''),'err');return}
+  if(error){
+    setStatus('Error cargando citas:\n'+error.message+'\nCódigo: '+(error.code||''),'err');
+    return;
+  }
+
   sessions=(data||[]).map(normalize);
+  sessions.sort((a,b)=>dateTimeNum(a)-dateTimeNum(b));
   render();
 }
 
@@ -451,7 +480,7 @@ function render(){
   requestList.innerHTML=pending().length?'':'<div class="note">No hay solicitudes pendientes.</div>';
   pending().forEach(s=>{
     let i=sessions.indexOf(s);
-    requestList.innerHTML+=`<div class="slot pending"><div><b>${s.time}</b><br>${s.name}<br><span class="badge pendingB">Pendiente</span><br>${s.phone||''} · ${s.mode}</div><div><button class="okBtn" onclick="acceptRequest(${i})">Aceptar</button><button class="danger" onclick="rejectRequest(${i})">Rechazar</button></div></div>`;
+    requestList.innerHTML+=`<div class="slot pending"><div><b>${s.date} · ${s.time}</b><br>${s.name}<br><span class="badge pendingB">Pendiente</span><br>${s.phone||''} · ${s.mode}</div><div><button class="okBtn" onclick="acceptRequest(${i})">Aceptar</button><button class="danger" onclick="rejectRequest(${i})">Rechazar</button></div></div>`;
   });
 
   
