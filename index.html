@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>PsiAgenda MASTER V7 Operativa</title>
+<title>PsiAgenda MASTER V10.1 Centro de Comunicación</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -37,6 +37,13 @@ button:active{transform:scale(.98)}
 .mobileTabs{display:none;gap:8px;position:sticky;top:0;background:#f4f2fb;padding:8px;z-index:9}
 .mobileTabs button{font-size:14px;padding:10px;text-align:center;background:#6c3cff;color:white}
 @media(max-width:900px){body{padding:10px}.app{display:block}.card{margin-bottom:12px}.mobileTabs{display:flex}.panel{display:none}.panel.show{display:block}}
+
+.commDot{display:inline-block;background:#ff4a4a;color:#fff;border-radius:99px;padding:2px 8px;font-size:12px;margin-left:6px}
+.commTop{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+.commStat{background:#f4f4ff;border-radius:14px;padding:12px;text-align:center}.commStat b{display:block;font-size:20px;color:#5b2fd6}
+.commItem{background:#fff8df;border-radius:18px;padding:16px;margin:12px 0;border-left:6px solid #805900}.commItem.enviada{background:#f1fff5;border-left-color:#087a35}.commItem.cancelada{background:#fff0f0;border-left-color:#c62828}.commItem.confirmada{background:#edf4ff;border-left-color:#6c3cff}
+.commMsg{background:#fff;border:1px dashed #b9aecf;border-radius:14px;padding:12px;margin:10px 0;white-space:pre-wrap;font-size:14px;line-height:1.45}.commActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.commActions button{font-size:14px;padding:10px}
+@media(max-width:800px){.commTop{grid-template-columns:1fr 1fr}.commActions{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -49,7 +56,7 @@ button:active{transform:scale(.98)}
 
 <div class="app">
 <aside id="left" class="card panel show">
-<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">MASTER V7 · Operativa</div></div></div>
+<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">MASTER V10.1 · Comunicación</div></div></div>
 
 <div class="note"><b>Conexión Supabase</b><br>Usa tu misma URL y anon public key.</div>
 <input id="supabaseUrl" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
@@ -60,7 +67,7 @@ button:active{transform:scale(.98)}
 
 <div class="menu">
 <button onclick="show('agenda')">📅 Agenda por Fecha</button>
-<button onclick="show('solicitudes')">🟡 Solicitudes</button><button onclick="show('proximas')">🟢 Próximas</button><button onclick="show('historial')">📚 Historial</button><button onclick="show('canceladas')">❌ Canceladas</button>
+<button onclick="show('solicitudes')">🟡 Solicitudes</button><button onclick="show('comunicacion')">🔔 Comunicación <span id="commBadge" class="commDot">0</span></button><button onclick="show('proximas')">🟢 Próximas</button><button onclick="show('historial')">📚 Historial</button><button onclick="show('canceladas')">❌ Canceladas</button>
 <button onclick="show('pacientes')">👥 Pacientes</button>
 <button onclick="show('estadisticas')">📊 Estadísticas</button>
 <button onclick="show('disponibilidad')">🟢 Disponibilidad</button>
@@ -100,6 +107,20 @@ button:active{transform:scale(.98)}
 <div id="requestList"></div>
 </section>
 
+<section id="comunicacion" class="section">
+<h2>🔔 Centro de Comunicación con el Paciente</h2>
+<div class="note"><b>PsiAgenda — La atención comienza antes de la consulta.</b><br>
+Aquí se generan los mensajes institucionales para confirmar, reagendar, rechazar o cancelar reservas.</div>
+<div class="commTop">
+<div class="commStat">Total<b id="cmTotal">0</b></div>
+<div class="commStat">Pendientes<b id="cmPendientes">0</b></div>
+<div class="commStat">Enviadas<b id="cmEnviadas">0</b></div>
+<div class="commStat">Cancelaciones<b id="cmCanceladas">0</b></div>
+</div>
+<button class="warnBtn" onclick="clearCommunications()">🧹 Limpiar bandeja local</button>
+<div id="commList"></div>
+</section>
+
 <section id="proximas" class="section"><h2>Próximas citas</h2><div id="futureList"></div></section>
 <section id="historial" class="section"><h2>Historial</h2><div class="note">Las citas de días anteriores no se borran. Quedan aquí como respaldo del profesional.</div><div id="historyList"></div></section>
 <section id="canceladas" class="section"><h2>Canceladas</h2><div id="cancelList"></div></section>
@@ -118,7 +139,7 @@ button:active{transform:scale(.98)}
 <div class="stat">Bloqueos<h2 id="stBlocks">0</h2></div>
 <div class="stat">Ingresos<h2 id="stMoney">$0</h2></div>
 </div>
-<div class="note">V6 calcula ingresos desde citas confirmadas. Cierres siguen locales hasta crear tabla propia.</div>
+<div class="note">V10.1 calcula ingresos desde citas confirmadas. Cierres siguen locales hasta crear tabla propia.</div>
 <button onclick="generateDailyClose()">📊 Guardar cierre local</button>
 <button class="danger" onclick="clearClosures()">🗑️ Limpiar historial local</button>
 <div id="dailyClose"></div>
@@ -137,7 +158,7 @@ button:active{transform:scale(.98)}
 <label>Fin</label><input id="blockEnd" type="time" value="14:00">
 <input id="blockReason" placeholder="Motivo (ej: Almuerzo)">
 <button class="danger" onclick="addBlock()">Bloquear rango local</button>
-<div class="note">Los bloqueos siguen locales en V6 para no crear otra tabla todavía.</div>
+<div class="note">Los bloqueos siguen locales en V10.1 para no crear otra tabla todavía.</div>
 <div id="blockList"></div>
 </section>
 
@@ -149,7 +170,7 @@ button:active{transform:scale(.98)}
 <label>Fin jornada</label><input id="cfgEnd" type="time">
 <label>Duración por paciente (minutos)</label><input id="cfgDur" type="number" min="10" step="5">
 <button onclick="saveConfig()">Actualizar Agenda</button>
-<div class="note">Configuración local en V6. Luego la podemos pasar a Supabase.</div>
+<div class="note">Configuración local en V10.1. Luego la podemos pasar a Supabase.</div>
 </section>
 
 <section id="pacienteWeb" class="section">
@@ -218,6 +239,7 @@ let config=JSON.parse(localStorage.getItem('psiMasterConfigV6'))||{online:30000,
 let sessions=[];
 let blocks=JSON.parse(localStorage.getItem('psiMasterBlocksV6'))||[{start:'13:00',end:'14:00',reason:'Colación'}];
 let adminConfig={id:null,licencia_activa:true,modo_mantenimiento:false,mensaje_global:''};
+let communications=JSON.parse(localStorage.getItem('psiComunicacionV101'))||[];
 let chosen='',selected=0,reChosen='';
 
 const TABLE='citas_agenda';
@@ -283,6 +305,21 @@ function busy(t,skip=-1,date=selectedDate){let d=toDateKey(date);return activeSe
 function free(t,skip=-1,date=selectedDate){return !busy(t,skip,date)&&!blocked(t)}
 function today(){return new Date().toISOString().slice(0,10)}
 function addDays(dateStr,n){let d=new Date(dateStr+'T00:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+
+function saveCommunications(){localStorage.setItem('psiComunicacionV101',JSON.stringify(communications));}
+function cleanPhoneForWhatsApp(phone){let p=String(phone||'').replace(/\D/g,'');if(!p)return'';if(p.startsWith('56'))return p;if(p.length===9)return'56'+p;return p;}
+function communicationTitle(type){if(type==='confirmada')return'Reserva confirmada';if(type==='reagendada')return'Reserva reagendada';if(type==='cancelada')return'Reserva cancelada';if(type==='rechazada')return'Solicitud no confirmada';if(type==='recibida')return'Solicitud recibida';return'Comunicación PsiAgenda';}
+function professionalSignature(){return 'Valentina Psicóloga';}
+function institutionalFooter(){return 'Agradecemos la confianza depositada en nuestros servicios.\n\nSi deseas modificar, reagendar o cancelar tu cita, contáctanos utilizando el correo electrónico o WhatsApp registrados durante tu reserva. Nuestro equipo gestionará tu solicitud a la brevedad.\n\nPsiAgenda\nLa atención comienza antes de la consulta.\n\n'+professionalSignature();}
+function buildPatientMessage(type,s,extra={}){let name=s?.name||'Paciente';let date=extra.date||s?.date||selectedDate;let time=extra.time||s?.time||'';let mode=extra.mode||s?.mode||'';let value=extra.value||s?.value||0;let header='Estimado(a) '+name+':\n\n';if(type==='recibida')return header+'Hemos recibido tu solicitud de atención. Muchas gracias por confiar en nosotros.\n\nDetalles de la solicitud:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\n\nTu solicitud será revisada por la profesional y recibirás una respuesta mediante el correo electrónico y/o WhatsApp registrados durante tu reserva.\n\n'+institutionalFooter();if(type==='confirmada')return header+'Nos complace informarte que tu solicitud ha sido aceptada y tu reserva ha quedado confirmada.\n\nDetalles de tu atención:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\nValor: '+money(value)+'\n\n'+institutionalFooter();if(type==='reagendada')return header+'Con el objetivo de brindarte una mejor atención, tu cita ha sido reagendada.\n\nNueva información de tu reserva:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\nValor: '+money(value)+'\n\n'+institutionalFooter();if(type==='cancelada')return header+'Lamentamos informarte que, por motivos de agenda, la atención programada no podrá realizarse en la fecha prevista.\n\nReserva cancelada:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\n\nSi deseas una nueva hora, estaremos encantados de ayudarte a coordinar una nueva reserva.\n\n'+institutionalFooter();if(type==='rechazada')return header+'Lamentamos informarte que tu solicitud de hora no pudo ser confirmada en el horario solicitado.\n\nSolicitud revisada:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\n\nPuedes solicitar una nueva hora disponible a través del sistema de reservas.\n\n'+institutionalFooter();return header+'Tienes una actualización relacionada con tu reserva.\n\n'+institutionalFooter();}
+function addCommunication(type,s,extra={}){if(!s)return;let item={id:'C'+Date.now()+Math.floor(Math.random()*10000),type:type,title:communicationTitle(type),patient:s.name||'Paciente',email:s.email||'',phone:s.phone||'',date:extra.date||s.date||selectedDate,time:extra.time||s.time||'',mode:extra.mode||s.mode||'',value:Number(extra.value||s.value||0),createdAt:new Date().toLocaleString('es-CL'),status:'pendiente',message:buildPatientMessage(type,s,extra)};communications.unshift(item);saveCommunications();}
+function copyCommunication(id){let c=communications.find(x=>x.id===id);if(!c)return;navigator.clipboard.writeText(c.message).then(()=>alert('Mensaje copiado. Puedes pegarlo en WhatsApp o correo.'));}
+function emailCommunication(id){let c=communications.find(x=>x.id===id);if(!c)return;if(!c.email){alert('Este paciente no tiene correo registrado.');return}window.location.href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent(c.title+' - PsiAgenda')+'&body='+encodeURIComponent(c.message);}
+function whatsappCommunication(id){let c=communications.find(x=>x.id===id);if(!c)return;let phone=cleanPhoneForWhatsApp(c.phone);if(!phone){alert('Este paciente no tiene WhatsApp/teléfono registrado.');return}window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(c.message),'_blank');}
+function markCommunicationSent(id){let c=communications.find(x=>x.id===id);if(c){c.status='enviada';saveCommunications();renderCommunications();}}
+function clearCommunications(){if(confirm('¿Limpiar toda la bandeja local de comunicaciones?')){communications=[];saveCommunications();render();}}
+function renderCommunications(){if(typeof commList==='undefined')return;let pendientes=communications.filter(c=>c.status==='pendiente').length;let enviadas=communications.filter(c=>c.status==='enviada').length;let canceladas=communications.filter(c=>c.type==='cancelada'||c.type==='rechazada').length;if(typeof commBadge!=='undefined')commBadge.textContent=pendientes;if(typeof cmTotal!=='undefined')cmTotal.textContent=communications.length;if(typeof cmPendientes!=='undefined')cmPendientes.textContent=pendientes;if(typeof cmEnviadas!=='undefined')cmEnviadas.textContent=enviadas;if(typeof cmCanceladas!=='undefined')cmCanceladas.textContent=canceladas;if(!communications.length){commList.innerHTML='<div class="note">Aún no hay comunicaciones generadas.</div>';return}commList.innerHTML=communications.map(c=>{let cls=c.status==='enviada'?'enviada':(c.type==='cancelada'||c.type==='rechazada'?'cancelada':'confirmada');let badge=c.status==='enviada'?'pres':'pendingB';return `<div class="commItem ${cls}"><div><b>${c.title}</b><br><span class="small">${c.createdAt} · ${c.patient} · ${c.date} ${c.time}</span><br><span class="badge ${badge}">${c.status}</span></div><div class="commMsg">${c.message}</div><div class="commActions"><button onclick="copyCommunication('${c.id}')">📋 Copiar</button><button onclick="emailCommunication('${c.id}')">✉️ Correo</button><button onclick="whatsappCommunication('${c.id}')">📱 WhatsApp</button><button class="okBtn" onclick="markCommunicationSent('${c.id}')">✅ Marcar enviada</button></div></div>`}).join('');}
+
 function mobile(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));document.getElementById(id).classList.add('show')}
 function show(id){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');mobile('center');render()}
 function changeDay(n){selectedDate=addDays(selectedDate,n);newDate.value=selectedDate;selectedDateInput.value=selectedDate;loadSessions()}
@@ -518,6 +555,7 @@ function render(){
     licenseBox.innerHTML+='<div class="slot pending"><div><b>Modo mantenimiento activo</b><br>'+(adminConfig.mensaje_global||'Sistema en mantenimiento.')+'</div></div>';
   }
 
+  if(typeof commList!=='undefined') renderCommunications();
   if(sessions[selected])selectSession(selected,false);
   else detail.innerHTML='Selecciona una sesión de la agenda';
   saveLocal();
@@ -570,6 +608,7 @@ async function patientReserve(){
   const ok=await insertSession(s);
   if(!ok)return;
   sessions.push(s);
+  addCommunication('recibida',s);
   pName.value='';pPhone.value='';pEmail.value='';pTime.value='';
   pMsg.innerHTML='<div class="ok">✅ Solicitud enviada con éxito para '+date+' a las '+selectedTime+'.</div>';
   chosen='';
@@ -577,15 +616,15 @@ async function patientReserve(){
 }
 
 
-async function acceptRequest(i){await updateSession(i,{status:'confirmed'});selected=i;if(sessions[i])selectedDate=toDateKey(sessions[i].date);show('agenda')}
-async function rejectRequest(i){await updateSession(i,{status:'cancelled'})}
+async function acceptRequest(i){let s=sessions[i]?{...sessions[i],status:'confirmed'}:null;await updateSession(i,{status:'confirmed'});if(s){addCommunication('confirmada',s);selectedDate=toDateKey(s.date)}selected=i;show('agenda')}
+async function rejectRequest(i){let s=sessions[i]?{...sessions[i]}:null;if(s)addCommunication('rechazada',s);await updateSession(i,{status:'cancelled'})}
 
 function addBlock(){if(!ensureActive())return;let s=blockStart.value,e=blockEnd.value;if(mins(e)<=mins(s)){alert('El fin debe ser mayor que el inicio');return}blocks.push({start:s,end:e,reason:blockReason.value||'Bloqueado'});blockReason.value='';render()}
 function removeBlock(i){blocks.splice(i,1);render()}
 function openRe(){if(!ensureActive())return;let s=sessions[selected];if(!s){alert('Selecciona una cita primero.');return}reBox.style.display='block';reChosen='';reDate.value=s.date;reMode.value=s.mode;rePrice.value=s.value;render()}
 function suggestRePrice(){let current=Number(rePrice.value||0);if(current===Number(config.online)||current===Number(config.pres)||current===0)rePrice.value=val(reMode.value)}
-async function confirmRe(){let date=toDateKey(reDate.value||selectedDate);if(!reChosen){alert('Selecciona nueva hora');return}if(!free(reChosen,selected,date)){alert('⚠️ Esa hora ya está ocupada.');return}await updateSession(selected,{date:date,time:reChosen,mode:reMode.value,value:Number(rePrice.value||val(reMode.value))});reChosen='';reBox.style.display='none'}
-async function cancelSelected(){if(!ensureActive())return;if(!sessions[selected]){alert('Selecciona una cita primero.');return}if(confirm('¿Cancelar sesión?'))await updateSession(selected,{status:'cancelled'})}
+async function confirmRe(){let date=toDateKey(reDate.value||selectedDate);if(!reChosen){alert('Selecciona nueva hora');return}if(!free(reChosen,selected,date)){alert('⚠️ Esa hora ya está ocupada.');return}let old=sessions[selected]?{...sessions[selected]}:null;let newValue=Number(rePrice.value||val(reMode.value));await updateSession(selected,{date:date,time:reChosen,mode:reMode.value,value:newValue});if(old)addCommunication('reagendada',{...old,date:date,time:reChosen,mode:reMode.value,value:newValue});reChosen='';reBox.style.display='none'}
+async function cancelSelected(){if(!ensureActive())return;if(!sessions[selected]){alert('Selecciona una cita primero.');return}if(confirm('¿Cancelar sesión?')){addCommunication('cancelada',sessions[selected]);await updateSession(selected,{status:'cancelled'})}}
 function saveConfig(){let d=+cfgDur.value;if(!d||d<10){alert('Duración inválida');return}config={online:+cfgOnline.value,pres:+cfgPres.value,start:cfgStart.value,end:cfgEnd.value,dur:d};chosen='';render();alert('Configuración guardada')}
 
 async function saveLicense(){
