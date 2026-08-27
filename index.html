@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>PsiAgenda MASTER V10.1 Centro de Comunicación</title>
+<title>PsiAgenda V10.10 Acceso Seguro</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -44,9 +44,59 @@ button:active{transform:scale(.98)}
 .commItem{background:#fff8df;border-radius:18px;padding:16px;margin:12px 0;border-left:6px solid #805900}.commItem.enviada{background:#f1fff5;border-left-color:#087a35}.commItem.cancelada{background:#fff0f0;border-left-color:#c62828}.commItem.confirmada{background:#edf4ff;border-left-color:#6c3cff}
 .commMsg{background:#fff;border:1px dashed #b9aecf;border-radius:14px;padding:12px;margin:10px 0;white-space:pre-wrap;font-size:14px;line-height:1.45}.commActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.commActions button{font-size:14px;padding:10px}
 @media(max-width:800px){.commTop{grid-template-columns:1fr 1fr}.commActions{grid-template-columns:1fr}}
+
+.authScreen{position:fixed;inset:0;z-index:9999;background:#f4f2fb;display:flex;align-items:center;justify-content:center;padding:20px}
+.authCard{width:min(440px,100%);background:#fff;border-radius:24px;padding:28px;box-shadow:0 14px 40px rgba(40,20,90,.14)}
+.authLogo{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+.authTitle{margin:0;color:#6c3cff}.authSub{font-size:14px;color:#666;line-height:1.45;margin:8px 0 18px}
+.authMsg{margin-top:10px}.authUser{background:#f4f4ff;border-radius:14px;padding:10px 12px;margin:10px 0;font-size:13px;color:#4a4366}
+.logoutBtn{background:#fff0f0!important;color:#a40000!important}
+body.authLocked .app,body.authLocked .mobileTabs{display:none!important}
+
 </style>
 </head>
-<body>
+<body class="authLocked">
+
+<div id="authScreen" class="authScreen">
+  <div class="authCard">
+    <div class="authLogo"><div class="v">V</div><div><h1 class="authTitle">PsiAgenda</h1><div class="small">Acceso profesional seguro</div></div></div>
+    <div id="loginPanel">
+      <div class="authSub">Escribe tu correo profesional para continuar.</div>
+      <input id="loginEmail" type="email" autocomplete="username" placeholder="Correo profesional">
+      <button id="continueBtn" onclick="continueWithEmail()">Continuar</button>
+    </div>
+
+    <div id="existingLoginPanel" style="display:none">
+      <h2>Ingresar a PsiAgenda</h2>
+      <div id="existingEmailLabel" class="authSub"></div>
+      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Contraseña">
+      <button id="loginBtn" onclick="signInProfessional()">🔐 Iniciar sesión</button>
+      <button class="warnBtn" onclick="requestPasswordRecovery()">¿Olvidaste tu contraseña?</button>
+      <button class="secondary" onclick="backToEmail()">← Cambiar correo</button>
+    </div>
+
+    <div id="firstAccessPanel" style="display:none">
+      <h2>Crear acceso seguro</h2>
+      <div id="firstAccessEmailLabel" class="authSub"></div>
+      <div class="authSub">
+        Para proteger tu cuenta, primero verificaremos que este correo te pertenece.
+        Después del enlace de Supabase podrás crear y repetir tu contraseña.
+      </div>
+      <button id="firstAccessBtn" onclick="startFirstAccess()">Enviar correo de verificación</button>
+      <button class="secondary" onclick="backToEmail()">← Cambiar correo</button>
+    </div>
+
+    <div id="recoveryPanel" style="display:none">
+      <h2>Crear nueva contraseña</h2>
+      <div class="authSub">Escribe una contraseña nueva para tu cuenta profesional.</div>
+      <input id="newPassword1" type="password" autocomplete="new-password" placeholder="Nueva contraseña">
+      <input id="newPassword2" type="password" autocomplete="new-password" placeholder="Repetir contraseña">
+      <button id="savePasswordBtn" onclick="saveRecoveredPassword()">💾 Guardar nueva contraseña</button>
+    </div>
+    <div id="authMsg" class="authMsg"></div>
+  </div>
+</div>
+
 
 <div class="mobileTabs">
 <button onclick="mobile('left')">🏠 Menú</button>
@@ -56,7 +106,7 @@ button:active{transform:scale(.98)}
 
 <div class="app">
 <aside id="left" class="card panel show">
-<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">MASTER V10.1 · Comunicación</div></div></div>
+<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">V10.10 · Acceso Seguro</div></div></div>
 
 <div class="note"><b>Conexión Supabase</b><br>Usa tu misma URL y anon public key.</div>
 <input id="supabaseUrl" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
@@ -64,6 +114,8 @@ button:active{transform:scale(.98)}
 <button onclick="connectSupabase()">🔌 Conectar / Cargar</button>
 <button class="warnBtn" onclick="loadAll()">🔄 Recargar desde Supabase</button>
 <div id="statusBox"></div>
+<div id="loggedUserBox" class="authUser" style="display:none"></div>
+<button id="logoutBtn" class="logoutBtn" style="display:none" onclick="signOutProfessional()">🚪 Cerrar sesión</button>
 
 <div class="menu">
 <button onclick="show('agenda')">📅 Agenda por Fecha</button>
@@ -139,7 +191,7 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 <div class="stat">Bloqueos<h2 id="stBlocks">0</h2></div>
 <div class="stat">Ingresos<h2 id="stMoney">$0</h2></div>
 </div>
-<div class="note">V10.1 calcula ingresos desde citas confirmadas. Cierres siguen locales hasta crear tabla propia.</div>
+<div class="note">V10.3 calcula ingresos desde citas confirmadas. Cierres siguen locales hasta crear tabla propia.</div>
 <button onclick="generateDailyClose()">📊 Guardar cierre local</button>
 <button class="danger" onclick="clearClosures()">🗑️ Limpiar historial local</button>
 <div id="dailyClose"></div>
@@ -158,7 +210,7 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 <label>Fin</label><input id="blockEnd" type="time" value="14:00">
 <input id="blockReason" placeholder="Motivo (ej: Almuerzo)">
 <button class="danger" onclick="addBlock()">Bloquear rango local</button>
-<div class="note">Los bloqueos siguen locales en V10.1 para no crear otra tabla todavía.</div>
+<div class="note">Los bloqueos siguen locales en V10.3 para no crear otra tabla todavía.</div>
 <div id="blockList"></div>
 </section>
 
@@ -170,7 +222,7 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 <label>Fin jornada</label><input id="cfgEnd" type="time">
 <label>Duración por paciente (minutos)</label><input id="cfgDur" type="number" min="10" step="5">
 <button onclick="saveConfig()">Actualizar Agenda</button>
-<div class="note">Configuración local en V10.1. Luego la podemos pasar a Supabase.</div>
+<div class="note">Configuración local en V10.3. Luego la podemos pasar a Supabase.</div>
 </section>
 
 <section id="pacienteWeb" class="section">
@@ -233,6 +285,11 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 let db=null;
 let currentUserId=null;
 let currentEmail=null;
+let currentProfessionalId=null;
+let currentProfessionalName='';
+let recoveryMode=false;
+let initialAuthCheck=true;
+let authBooting=true; // bloquea el autoingreso mientras se limpia la sesión guardada
 let selectedDate=new Date().toISOString().slice(0,10);
 
 let config=JSON.parse(localStorage.getItem('psiMasterConfigV6'))||{online:30000,pres:40000,start:'08:00',end:'18:00',dur:45};
@@ -328,30 +385,262 @@ function saveLocal(){localStorage.setItem('psiMasterConfigV6',JSON.stringify(con
 const SUPABASE_URL_FIJA='https://kpkrlloxsubacruoxqlz.supabase.co';
 const SUPABASE_KEY_FIJA='sb_publishable_1zDD5Pgu92My50gkOHlt7Q_Dj1pjv5f';
 
-window.onload=()=> {
+window.onload=async()=> {
   supabaseUrl.value=localStorage.getItem('psi_supabase_url')||SUPABASE_URL_FIJA;
   supabaseKey.value=localStorage.getItem('psi_supabase_key')||SUPABASE_KEY_FIJA;
-  cfgOnline.value=config.online;cfgPres.value=config.pres;cfgStart.value=config.start;cfgEnd.value=config.end;cfgDur.value=config.dur; newDate.value=selectedDate; selectedDateInput.value=selectedDate; if(typeof reDate!=='undefined') reDate.value=selectedDate;
-  if(supabaseUrl.value && supabaseKey.value) connectSupabase();
-  else render();
+  cfgOnline.value=config.online;cfgPres.value=config.pres;cfgStart.value=config.start;cfgEnd.value=config.end;cfgDur.value=config.dur;newDate.value=selectedDate;selectedDateInput.value=selectedDate;if(typeof reDate!=='undefined')reDate.value=selectedDate;
+  await connectSupabase();
 };
 
 async function connectSupabase(){
   const url=supabaseUrl.value.trim();
   const key=supabaseKey.value.trim();
-  if(!url||!key){setStatus('Falta URL o ANON KEY.','err');return}
+  if(!url||!key){showAuthMessage('Falta URL o ANON KEY.','err');return}
   localStorage.setItem('psi_supabase_url',url);
   localStorage.setItem('psi_supabase_key',key);
   try{
     db=window.supabase.createClient(url,key);
-    const {data:{user}}=await db.auth.getUser();
-    currentUserId=user ? user.id : null;
-    currentEmail=user ? user.email : null;
-    await loadAll();
-    setStatus('Supabase conectado. Citas cargadas: '+sessions.length);
+    db.auth.onAuthStateChange(async(event,session)=>{
+      if(event==='PASSWORD_RECOVERY'){
+        recoveryMode=true;
+        showRecoveryPanel();
+        showAuthMessage('Enlace válido. Ahora crea tu nueva contraseña.','ok');
+        return;
+      }
+      if(event==='SIGNED_IN' && session?.user && !recoveryMode){
+        // Durante el arranque Supabase puede emitir SIGNED_IN/INITIAL_SESSION
+        // por una sesión antigua. No permitimos abrir la agenda hasta terminar la limpieza.
+        if(authBooting) return;
+        await finishAuthenticatedSession(session.user);
+      }
+      if(event==='SIGNED_OUT') lockApp();
+    });
+    const {data:{session},error}=await db.auth.getSession();
+    if(error) throw error;
+
+    // Seguridad V10.7: al abrir PsiAgenda siempre pedimos correo y contraseña.
+    // Supabase conserva la sesión en el navegador; la cerramos solo en la carga inicial.
+    if(initialAuthCheck && !recoveryMode){
+      initialAuthCheck=false;
+      if(session?.user) await db.auth.signOut();
+      lockApp();
+      showLoginPanel();
+      authBooting=false;
+      return;
+    }
+
+    authBooting=false;
+    if(session?.user && !recoveryMode) await finishAuthenticatedSession(session.user);
+    else if(!recoveryMode){ lockApp(); showLoginPanel(); }
   }catch(e){
-    setStatus('Error conectando:\n'+e.message,'err');
+    lockApp();
+    showAuthMessage('Error conectando con Supabase:\n'+e.message,'err');
   }
+}
+function showAuthMessage(msg,type='err'){
+  if(typeof authMsg==='undefined') return;
+  authMsg.innerHTML='<div class="'+(type==='ok'?'ok':'err')+'">'+msg+'</div>';
+}
+function showLoginPanel(){
+  recoveryMode=false;
+  if(typeof hideAuthPanels==='function') hideAuthPanels();
+  else recoveryPanel.style.display='none';
+  loginPanel.style.display='block';
+  lockApp();
+}
+function showRecoveryPanel(){
+  if(typeof hideAuthPanels==='function') hideAuthPanels();
+  else loginPanel.style.display='none';
+  recoveryPanel.style.display='block';
+  document.body.classList.add('authLocked');
+  authScreen.style.display='flex';
+}
+function lockApp(){
+  document.body.classList.add('authLocked');
+  authScreen.style.display='flex';
+  loggedUserBox.style.display='none';
+  logoutBtn.style.display='none';
+}
+function unlockApp(){
+  document.body.classList.remove('authLocked');
+  authScreen.style.display='none';
+  loggedUserBox.style.display='block';
+  loggedUserBox.innerHTML='<b>Profesional:</b> '+(currentProfessionalName||currentEmail||'Usuario')+'<br><span class="small">'+(currentEmail||'')+'</span>';
+  logoutBtn.style.display='block';
+}
+async function resolveProfessional(user){
+  currentUserId=user?.id||null;
+  currentEmail=user?.email||null;
+  currentProfessionalId=null;currentProfessionalName='';
+  if(!currentUserId) throw new Error('No se pudo identificar al usuario autenticado.');
+  let {data,error}=await db.from('profesionales').select('id,nombre,email').eq('id',currentUserId).maybeSingle();
+  if(error) throw error;
+  if(!data && currentEmail){
+    const r=await db.from('profesionales').select('id,nombre,email').ilike('email',currentEmail).limit(1).maybeSingle();
+    if(r.error) throw r.error;
+    data=r.data;
+  }
+  if(!data) throw new Error('La cuenta existe en Authentication, pero no está registrada en la tabla profesionales.');
+  currentProfessionalId=data.id;
+  currentProfessionalName=data.nombre||data.email||'Profesional';
+}
+async function finishAuthenticatedSession(user){
+  try{
+    await resolveProfessional(user);
+    recoveryMode=false;
+    unlockApp();
+    await loadAll();
+    setStatus('Sesión iniciada: '+currentProfessionalName+'. Citas cargadas: '+sessions.length);
+  }catch(e){
+    currentUserId=null;currentEmail=null;currentProfessionalId=null;currentProfessionalName='';
+    lockApp();showAuthMessage(e.message,'err');
+  }
+}
+
+async function getAuthorizedProfessionalByEmail(email){
+  // Antes del login, RLS puede ocultar la tabla profesionales.
+  // Para el primer acceso usamos la lista local de correos autorizados del Administrador Maestro.
+  // Una vez autenticado, PsiAgenda vuelve a validar el profesional contra Supabase.
+  const normalized=(email||'').trim().toLowerCase();
+  const MASTER_ADMIN_EMAIL='marioalexisbijman@gmail.com';
+  if(normalized===MASTER_ADMIN_EMAIL){
+    return {id:null,nombre:'Mario',email:normalized,activo:true,preauth:true};
+  }
+
+  // Si Supabase permite lectura pública de profesionales, también la aprovechamos.
+  // Si RLS devuelve 0 filas, no lo tratamos como error técnico.
+  try{
+    const {data,error}=await db.from('profesionales')
+      .select('id,nombre,email,activo')
+      .ilike('email',normalized)
+      .limit(1)
+      .maybeSingle();
+    if(error) console.warn('Preautorización RLS:', error.message);
+    return data || null;
+  }catch(e){
+    console.warn('Preautorización RLS:', e);
+    return null;
+  }
+}
+
+function hideAuthPanels(){
+  loginPanel.style.display='none';
+  existingLoginPanel.style.display='none';
+  firstAccessPanel.style.display='none';
+  recoveryPanel.style.display='none';
+}
+
+function backToEmail(){
+  hideAuthPanels();
+  loginPanel.style.display='block';
+  showAuthMessage('','ok');
+}
+
+async function continueWithEmail(){
+  const email=loginEmail.value.trim().toLowerCase();
+  if(!email){showAuthMessage('Escribe tu correo profesional.');return}
+  continueBtn.disabled=true;continueBtn.textContent='Verificando...';
+  try{
+    if(!db){await connectSupabase();if(!db)return}
+    const professional=await getAuthorizedProfessionalByEmail(email);
+    if(!professional){
+      throw new Error('Este correo no está autorizado por el Administrador Maestro de PsiAgenda.');
+    }
+    if(professional.activo===false){
+      throw new Error('Tu acceso a PsiAgenda no está activo. Contacta al Administrador.');
+    }
+
+    hideAuthPanels();
+    // Primera pantalla ofrecida al profesional autorizado: crear/repetir contraseña.
+    // El guardado se confirma mediante enlace seguro enviado al correo.
+    firstAccessEmailLabel.textContent=email;
+    firstAccessPanel.style.display='block';
+    showAuthMessage('Si ya creaste tu contraseña anteriormente, puedes ingresar con ella.', 'ok');
+
+    // Add an existing-user shortcut once, without exposing account existence outside the authorized table.
+    if(!document.getElementById('existingShortcut')){
+      const b=document.createElement('button');
+      b.id='existingShortcut';b.className='warnBtn';
+      b.textContent='Ya tengo contraseña';
+      b.onclick=()=>{hideAuthPanels();existingEmailLabel.textContent=email;existingLoginPanel.style.display='block';showAuthMessage('','ok');};
+      firstAccessPanel.appendChild(b);
+    }else{
+      document.getElementById('existingShortcut').onclick=()=>{hideAuthPanels();existingEmailLabel.textContent=email;existingLoginPanel.style.display='block';showAuthMessage('','ok');};
+    }
+  }catch(e){showAuthMessage(e.message,'err');}
+  finally{continueBtn.disabled=false;continueBtn.textContent='Continuar';}
+}
+
+async function startFirstAccess(){
+  const email=loginEmail.value.trim().toLowerCase();
+  if(!email){showAuthMessage('Escribe tu correo profesional.');return}
+
+  firstAccessBtn.disabled=true;
+  firstAccessBtn.textContent='Enviando verificación...';
+
+  try{
+    // password.html se publicará junto a PsiAgenda en el mismo dominio de Vercel.
+    const redirectTo='https://agenda-fzt1-git-main-psiagenda-s-projects.vercel.app/contrasena.html';
+    const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error) throw error;
+
+    showAuthMessage(
+      'Te enviamos un correo de Supabase. Ábrelo y pulsa “Reset password”. '+
+      'La página segura te pedirá crear y repetir tu contraseña.',
+      'ok'
+    );
+  }catch(e){
+    showAuthMessage('No se pudo enviar la verificación:\\n'+e.message,'err');
+  }finally{
+    firstAccessBtn.disabled=false;
+    firstAccessBtn.textContent='Enviar correo de verificación';
+  }
+}
+
+async function signInProfessional(){
+  if(!db){await connectSupabase();if(!db)return}
+  const email=loginEmail.value.trim(),password=loginPassword.value;
+  if(!email||!password){showAuthMessage('Completa correo y contraseña.');return}
+  loginBtn.disabled=true;loginBtn.textContent='Ingresando...';
+  try{
+    const {data,error}=await db.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    if(!data?.user) throw new Error('No se pudo iniciar sesión.');
+    await finishAuthenticatedSession(data.user);
+    loginPassword.value='';
+  }catch(e){showAuthMessage('No fue posible iniciar sesión:\n'+e.message,'err');}
+  finally{loginBtn.disabled=false;loginBtn.textContent='🔐 Iniciar sesión';}
+}
+async function requestPasswordRecovery(){
+  if(!db){await connectSupabase();if(!db)return}
+  const email=loginEmail.value.trim();
+  if(!email){showAuthMessage('Escribe primero tu correo profesional.');return}
+  try{
+    const redirectTo='https://agenda-fzt1-git-main-psiagenda-s-projects.vercel.app/contrasena.html';
+    const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error) throw error;
+    showAuthMessage('Te enviamos un correo para crear una nueva contraseña. Usa solamente el correo más reciente.','ok');
+  }catch(e){showAuthMessage('No se pudo enviar la recuperación:\n'+e.message,'err');}
+}
+async function saveRecoveredPassword(){
+  const p1=newPassword1.value,p2=newPassword2.value;
+  if(!p1||p1.length<8){showAuthMessage('La contraseña debe tener al menos 8 caracteres.');return}
+  if(p1!==p2){showAuthMessage('Las dos contraseñas no coinciden.');return}
+  savePasswordBtn.disabled=true;savePasswordBtn.textContent='Guardando...';
+  try{
+    const {error}=await db.auth.updateUser({password:p1});
+    if(error) throw error;
+    newPassword1.value='';newPassword2.value='';
+    await db.auth.signOut();
+    showLoginPanel();
+    showAuthMessage('Contraseña guardada correctamente. Ya puedes entrar a PsiAgenda.','ok');
+  }catch(e){showAuthMessage('No se pudo guardar la contraseña:\n'+e.message,'err');}
+  finally{savePasswordBtn.disabled=false;savePasswordBtn.textContent='💾 Guardar nueva contraseña';}
+}
+async function signOutProfessional(){
+  if(db) await db.auth.signOut();
+  currentUserId=null;currentEmail=null;currentProfessionalId=null;currentProfessionalName='';
+  sessions=[];render();showLoginPanel();showAuthMessage('Sesión cerrada correctamente.','ok');
 }
 
 async function loadAll(){
@@ -392,18 +681,17 @@ function toDb(s){
     estado_pago:'pendiente',
     status:cleanStatus(s.status)
   };
-  if(currentUserId) row.profesional_id=currentUserId;
+  if(currentProfessionalId) row.profesional_id=currentProfessionalId;
   return row;
 }
 
 async function loadSessions(){
   if(!db){setStatus('Primero conecta Supabase.','err');return}
 
-  // V7 OPERATIVA:
-  // La reserva pública guarda solicitudes con profesional_id = NULL.
-  // Por eso cargamos todos los registros visibles de citas_agenda,
-  // sin filtrar por profesional_id.
-  let query=db.from(TABLE).select('*');
+  if(!currentProfessionalId){setStatus('No hay profesional autenticado.','err');return}
+  // V10.2 transición: citas propias + reservas públicas antiguas con profesional_id NULL.
+  let query=db.from(TABLE).select('*')
+    .or('profesional_id.eq.'+currentProfessionalId+',profesional_id.is.null');
 
   const {data,error}=await query;
   if(error){
@@ -562,6 +850,7 @@ function render(){
 }
 
 function ensureActive(){
+  if(!currentProfessionalId){alert('Debes iniciar sesión como profesional.');return false;}
   if(adminConfig.licencia_activa===false){
     alert(adminConfig.mensaje_global||'Licencia suspendida por administración.');
     return false;
