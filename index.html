@@ -106,7 +106,7 @@ body.authLocked .app,body.authLocked .mobileTabs{display:none!important}
 
 <div class="app">
 <aside id="left" class="card panel show">
-<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">V10.10 · Acceso Seguro</div></div></div>
+<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">V10.11 · Aislamiento Estricto</div></div></div>
 
 <div class="note"><b>Conexión Supabase</b><br>Usa tu misma URL y anon public key.</div>
 <input id="supabaseUrl" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
@@ -689,9 +689,9 @@ async function loadSessions(){
   if(!db){setStatus('Primero conecta Supabase.','err');return}
 
   if(!currentProfessionalId){setStatus('No hay profesional autenticado.','err');return}
-  // V10.2 transición: citas propias + reservas públicas antiguas con profesional_id NULL.
+  // V10.11 aislamiento estricto: cada profesional carga únicamente sus propias citas.
   let query=db.from(TABLE).select('*')
-    .or('profesional_id.eq.'+currentProfessionalId+',profesional_id.is.null');
+    .eq('profesional_id',currentProfessionalId);
 
   const {data,error}=await query;
   if(error){
