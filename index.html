@@ -106,7 +106,7 @@ body.authLocked .app,body.authLocked .mobileTabs{display:none!important}
 
 <div class="app">
 <aside id="left" class="card panel show">
-<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">V10.11 · Aislamiento Estricto</div></div></div>
+<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">V10.12 · Acceso + Aislamiento</div></div></div>
 
 <div class="note"><b>Conexión Supabase</b><br>Usa tu misma URL y anon public key.</div>
 <input id="supabaseUrl" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
@@ -542,22 +542,15 @@ async function continueWithEmail(){
   continueBtn.disabled=true;continueBtn.textContent='Verificando...';
   try{
     if(!db){await connectSupabase();if(!db)return}
-    const professional=await getAuthorizedProfessionalByEmail(email);
-    if(!professional){
-      throw new Error('Este correo no está autorizado por el Administrador Maestro de PsiAgenda.');
-    }
-    if(professional.activo===false){
-      throw new Error('Tu acceso a PsiAgenda no está activo. Contacta al Administrador.');
-    }
 
+    // V10.12: no consultamos "profesionales" antes del login.
+    // RLS puede ocultar esa tabla a usuarios anónimos.
+    // La autorización REAL se valida después de autenticar, en resolveProfessional(user).
     hideAuthPanels();
-    // Primera pantalla ofrecida al profesional autorizado: crear/repetir contraseña.
-    // El guardado se confirma mediante enlace seguro enviado al correo.
     firstAccessEmailLabel.textContent=email;
     firstAccessPanel.style.display='block';
     showAuthMessage('Si ya creaste tu contraseña anteriormente, puedes ingresar con ella.', 'ok');
 
-    // Add an existing-user shortcut once, without exposing account existence outside the authorized table.
     if(!document.getElementById('existingShortcut')){
       const b=document.createElement('button');
       b.id='existingShortcut';b.className='warnBtn';
@@ -580,7 +573,7 @@ async function startFirstAccess(){
 
   try{
     // password.html se publicará junto a PsiAgenda en el mismo dominio de Vercel.
-    const redirectTo='https://agenda-fzt1-git-main-psiagenda-s-projects.vercel.app/contrasena.html';
+    const redirectTo='https://agenda-fzt1.vercel.app/contrasena.html';
     const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
     if(error) throw error;
 
@@ -616,7 +609,7 @@ async function requestPasswordRecovery(){
   const email=loginEmail.value.trim();
   if(!email){showAuthMessage('Escribe primero tu correo profesional.');return}
   try{
-    const redirectTo='https://agenda-fzt1-git-main-psiagenda-s-projects.vercel.app/contrasena.html';
+    const redirectTo='https://agenda-fzt1.vercel.app/contrasena.html';
     const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
     if(error) throw error;
     showAuthMessage('Te enviamos un correo para crear una nueva contraseña. Usa solamente el correo más reciente.','ok');
