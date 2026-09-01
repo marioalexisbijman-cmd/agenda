@@ -76,13 +76,11 @@ body.authLocked .app,body.authLocked .mobileTabs{display:none!important}
     </div>
 
     <div id="firstAccessPanel" style="display:none">
-      <h2>Crear acceso seguro</h2>
+      <h2>Ingresar a PsiAgenda</h2>
       <div id="firstAccessEmailLabel" class="authSub"></div>
-      <div class="authSub">
-        Para proteger tu cuenta, primero verificaremos que este correo te pertenece.
-        Después del enlace de Supabase podrás crear y repetir tu contraseña.
-      </div>
-      <button id="firstAccessBtn" onclick="startFirstAccess()">Enviar correo de verificación</button>
+      <div class="authSub">Ingresa la clave temporal entregada por el Administrador Maestro. En el primer ingreso PsiAgenda te obligará a crear una contraseña privada.</div>
+      <input id="tempLoginPassword" type="password" autocomplete="current-password" placeholder="Clave temporal">
+      <button id="tempLoginBtn" onclick="signInWithTemporaryPassword()">🔐 Ingresar con clave temporal</button>
       <button class="secondary" onclick="backToEmail()">← Cambiar correo</button>
     </div>
 
@@ -92,6 +90,13 @@ body.authLocked .app,body.authLocked .mobileTabs{display:none!important}
       <input id="newPassword1" type="password" autocomplete="new-password" placeholder="Nueva contraseña">
       <input id="newPassword2" type="password" autocomplete="new-password" placeholder="Repetir contraseña">
       <button id="savePasswordBtn" onclick="saveRecoveredPassword()">💾 Guardar nueva contraseña</button>
+    </div>
+    <div id="forcedPasswordPanel" style="display:none">
+      <h2>Crear tu contraseña privada</h2>
+      <div class="authSub">La clave temporal ya cumplió su función. Crea ahora una contraseña que solo tú conozcas.</div>
+      <input id="forcedPassword1" type="password" autocomplete="new-password" placeholder="Nueva contraseña (mínimo 8 caracteres)">
+      <input id="forcedPassword2" type="password" autocomplete="new-password" placeholder="Repetir nueva contraseña">
+      <button id="forcedPasswordBtn" onclick="saveForcedPassword()">💾 Guardar mi contraseña</button>
     </div>
     <div id="authMsg" class="authMsg"></div>
   </div>
@@ -106,7 +111,7 @@ body.authLocked .app,body.authLocked .mobileTabs{display:none!important}
 
 <div class="app">
 <aside id="left" class="card panel show">
-<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">V10.12 · Acceso + Aislamiento</div></div></div>
+<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">V10.13 · Clave Temporal + Aislamiento</div></div></div>
 
 <div class="note"><b>Conexión Supabase</b><br>Usa tu misma URL y anon public key.</div>
 <input id="supabaseUrl" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
@@ -259,6 +264,16 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 
 <button onclick="saveLicense()">💾 Guardar Admin LIGHT en Supabase</button>
 <button class="warnBtn" onclick="loadAdminConfig()">🔄 Recargar Admin LIGHT</button>
+
+<hr style="margin:22px 0;border:0;border-top:1px solid #ddd">
+<h3>🔑 Acceso temporal de profesionales</h3>
+<div class="note">Solo el Administrador Maestro puede asignar una clave temporal. El profesional deberá cambiarla obligatoriamente en su primer ingreso.</div>
+<label>Correo del profesional</label>
+<input id="adminTempEmail" type="email" placeholder="profesional@correo.com">
+<label>Clave temporal</label>
+<input id="adminTempPassword" type="text" placeholder="Mínimo 8 caracteres">
+<button id="adminTempBtn" onclick="adminSetTemporaryPassword()">🔑 Asignar clave temporal</button>
+<div id="adminTempMsg" class="note" style="display:none"></div>
 
 <div id="licenseBox"></div>
 </section>
@@ -488,6 +503,14 @@ async function finishAuthenticatedSession(user){
   try{
     await resolveProfessional(user);
     recoveryMode=false;
+    if(user?.user_metadata?.must_change_password===true){
+      hideAuthPanels();
+      forcedPasswordPanel.style.display='block';
+      document.body.classList.add('authLocked');
+      authScreen.style.display='flex';
+      showAuthMessage('Por seguridad debes reemplazar la clave temporal antes de usar PsiAgenda.','ok');
+      return;
+    }
     unlockApp();
     await loadAll();
     setStatus('Sesión iniciada: '+currentProfessionalName+'. Citas cargadas: '+sessions.length);
@@ -528,6 +551,7 @@ function hideAuthPanels(){
   existingLoginPanel.style.display='none';
   firstAccessPanel.style.display='none';
   recoveryPanel.style.display='none';
+  forcedPasswordPanel.style.display='none';
 }
 
 function backToEmail(){
@@ -539,29 +563,67 @@ function backToEmail(){
 async function continueWithEmail(){
   const email=loginEmail.value.trim().toLowerCase();
   if(!email){showAuthMessage('Escribe tu correo profesional.');return}
-  continueBtn.disabled=true;continueBtn.textContent='Verificando...';
+  if(!db){await connectSupabase();if(!db)return}
+  hideAuthPanels();
+  firstAccessEmailLabel.textContent=email;
+  firstAccessPanel.style.display='block';
+  showAuthMessage('Usa la clave temporal entregada por el Administrador Maestro o, si ya cambiaste tu clave, entra con tu contraseña habitual.','ok');
+  if(!document.getElementById('existingShortcut')){
+    const b=document.createElement('button');
+    b.id='existingShortcut';b.className='warnBtn';b.textContent='Ya tengo contraseña personal';
+    b.onclick=()=>{hideAuthPanels();existingEmailLabel.textContent=email;existingLoginPanel.style.display='block';showAuthMessage('','ok');};
+    firstAccessPanel.appendChild(b);
+  }
+}
+
+async function signInWithTemporaryPassword(){
+  if(!db){await connectSupabase();if(!db)return}
+  const email=loginEmail.value.trim().toLowerCase(), password=tempLoginPassword.value;
+  if(!email||!password){showAuthMessage('Completa correo y clave temporal.');return}
+  tempLoginBtn.disabled=true;tempLoginBtn.textContent='Ingresando...';
   try{
-    if(!db){await connectSupabase();if(!db)return}
+    const {data,error}=await db.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    if(!data?.user) throw new Error('No se pudo iniciar sesión.');
+    await finishAuthenticatedSession(data.user);
+    tempLoginPassword.value='';
+  }catch(e){showAuthMessage('No fue posible iniciar sesión:\n'+e.message,'err');}
+  finally{tempLoginBtn.disabled=false;tempLoginBtn.textContent='🔐 Ingresar con clave temporal';}
+}
 
-    // V10.12: no consultamos "profesionales" antes del login.
-    // RLS puede ocultar esa tabla a usuarios anónimos.
-    // La autorización REAL se valida después de autenticar, en resolveProfessional(user).
-    hideAuthPanels();
-    firstAccessEmailLabel.textContent=email;
-    firstAccessPanel.style.display='block';
-    showAuthMessage('Si ya creaste tu contraseña anteriormente, puedes ingresar con ella.', 'ok');
+async function saveForcedPassword(){
+  const p1=forcedPassword1.value,p2=forcedPassword2.value;
+  if(!p1||p1.length<8){showAuthMessage('La nueva contraseña debe tener al menos 8 caracteres.','err');return}
+  if(p1!==p2){showAuthMessage('Las contraseñas no coinciden.','err');return}
+  forcedPasswordBtn.disabled=true;forcedPasswordBtn.textContent='Guardando...';
+  try{
+    const {data:{user:me}}=await db.auth.getUser();
+    const metadata={...(me?.user_metadata||{}),must_change_password:false};
+    const {data,error}=await db.auth.updateUser({password:p1,data:metadata});
+    if(error) throw error;
+    forcedPassword1.value='';forcedPassword2.value='';
+    showAuthMessage('Contraseña privada creada correctamente. Entrando a PsiAgenda...','ok');
+    await finishAuthenticatedSession(data.user);
+  }catch(e){showAuthMessage('No se pudo guardar la nueva contraseña:\n'+e.message,'err');}
+  finally{forcedPasswordBtn.disabled=false;forcedPasswordBtn.textContent='💾 Guardar mi contraseña';}
+}
 
-    if(!document.getElementById('existingShortcut')){
-      const b=document.createElement('button');
-      b.id='existingShortcut';b.className='warnBtn';
-      b.textContent='Ya tengo contraseña';
-      b.onclick=()=>{hideAuthPanels();existingEmailLabel.textContent=email;existingLoginPanel.style.display='block';showAuthMessage('','ok');};
-      firstAccessPanel.appendChild(b);
-    }else{
-      document.getElementById('existingShortcut').onclick=()=>{hideAuthPanels();existingEmailLabel.textContent=email;existingLoginPanel.style.display='block';showAuthMessage('','ok');};
-    }
-  }catch(e){showAuthMessage(e.message,'err');}
-  finally{continueBtn.disabled=false;continueBtn.textContent='Continuar';}
+async function adminSetTemporaryPassword(){
+  const email=adminTempEmail.value.trim().toLowerCase();
+  const password=adminTempPassword.value;
+  adminTempMsg.style.display='block';
+  if(!email||!password||password.length<8){adminTempMsg.textContent='Completa el correo y una clave temporal de al menos 8 caracteres.';return}
+  adminTempBtn.disabled=true;adminTempBtn.textContent='Asignando...';
+  try{
+    const {data:{session}}=await db.auth.getSession();
+    if(!session?.access_token) throw new Error('Debes iniciar sesión como Administrador Maestro.');
+    const r=await fetch('/api/admin-temp-password',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({email,password})});
+    const body=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(body.error||'No se pudo asignar la clave temporal.');
+    adminTempPassword.value='';
+    adminTempMsg.textContent='Clave temporal asignada. Entrégala al profesional por un canal privado. En su primer ingreso deberá reemplazarla.';
+  }catch(e){adminTempMsg.textContent='Error: '+e.message;}
+  finally{adminTempBtn.disabled=false;adminTempBtn.textContent='🔑 Asignar clave temporal';}
 }
 
 async function startFirstAccess(){
