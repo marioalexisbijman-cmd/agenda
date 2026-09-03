@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>PsiAgenda V10.10 Acceso Seguro</title>
+<title>PsiAgenda</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -111,13 +111,15 @@ body.authLocked .app,body.authLocked .mobileTabs{display:none!important}
 
 <div class="app">
 <aside id="left" class="card panel show">
-<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">V10.13 · Clave Temporal + Aislamiento</div></div></div>
+<div class="logo"><div class="v">V</div><div><h1>PsiAgenda</h1><div class="small">Gestión profesional</div></div></div>
 
-<div class="note"><b>Conexión Supabase</b><br>Usa tu misma URL y anon public key.</div>
-<input id="supabaseUrl" placeholder="https://kpkrlloxsubacruoxqlz.supabase.co">
-<input id="supabaseKey" placeholder="SUPABASE ANON PUBLIC KEY">
+<div id="masterTechnical" style="display:none">
+<div class="note"><b>Conexión del sistema</b><br>Herramientas reservadas al Administrador Maestro.</div>
+<input id="supabaseUrl" placeholder="URL del servicio">
+<input id="supabaseKey" placeholder="Clave pública del servicio">
 <button onclick="connectSupabase()">🔌 Conectar / Cargar</button>
-<button class="warnBtn" onclick="loadAll()">🔄 Recargar desde Supabase</button>
+<button class="warnBtn" onclick="loadAll()">🔄 Recargar sistema</button>
+</div>
 <div id="statusBox"></div>
 <div id="loggedUserBox" class="authUser" style="display:none"></div>
 <button id="logoutBtn" class="logoutBtn" style="display:none" onclick="signOutProfessional()">🚪 Cerrar sesión</button>
@@ -131,7 +133,7 @@ body.authLocked .app,body.authLocked .mobileTabs{display:none!important}
 <button onclick="show('bloqueos')">🔒 Bloqueos</button>
 <button onclick="show('config')">⚙️ Configuración</button>
 <button onclick="show('pacienteWeb')">🌐 Vista Paciente</button>
-<button onclick="show('adminLight')">🛡️ Admin LIGHT</button>
+<button id="masterAdminMenu" style="display:none" onclick="show('adminLight')">🛡️ Administración</button>
 </div>
 <hr>
 
@@ -143,7 +145,7 @@ body.authLocked .app,body.authLocked .mobileTabs{display:none!important}
 <label>Fecha de reserva</label><input id="newDate" type="date" onchange="selectedDate=toDateKey(this.value);render()">
 <label>Horario</label><select id="newTime"></select>
 <div class="hours" id="adminHours"></div>
-<button onclick="addSession()">Guardar en Supabase</button>
+<button onclick="addSession()">Guardar reserva</button>
 </aside>
 
 <main id="center" class="card panel show">
@@ -184,7 +186,7 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 
 <section id="pacientes" class="section">
 <h2>Base de Pacientes</h2>
-<div class="note">Esta lista sale desde las citas guardadas en Supabase.</div>
+<div class="note">Esta lista se genera desde las citas guardadas del profesional.</div>
 <div id="patientList"></div>
 </section>
 
@@ -196,7 +198,7 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 <div class="stat">Bloqueos<h2 id="stBlocks">0</h2></div>
 <div class="stat">Ingresos<h2 id="stMoney">$0</h2></div>
 </div>
-<div class="note">V10.3 calcula ingresos desde citas confirmadas. Cierres siguen locales hasta crear tabla propia.</div>
+<div class="note">Los ingresos se calculan desde las citas confirmadas.</div>
 <button onclick="generateDailyClose()">📊 Guardar cierre local</button>
 <button class="danger" onclick="clearClosures()">🗑️ Limpiar historial local</button>
 <div id="dailyClose"></div>
@@ -215,7 +217,7 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 <label>Fin</label><input id="blockEnd" type="time" value="14:00">
 <input id="blockReason" placeholder="Motivo (ej: Almuerzo)">
 <button class="danger" onclick="addBlock()">Bloquear rango local</button>
-<div class="note">Los bloqueos siguen locales en V10.3 para no crear otra tabla todavía.</div>
+<div class="note">Los bloqueos se aplican a la agenda del profesional.</div>
 <div id="blockList"></div>
 </section>
 
@@ -227,12 +229,12 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 <label>Fin jornada</label><input id="cfgEnd" type="time">
 <label>Duración por paciente (minutos)</label><input id="cfgDur" type="number" min="10" step="5">
 <button onclick="saveConfig()">Actualizar Agenda</button>
-<div class="note">Configuración local en V10.3. Luego la podemos pasar a Supabase.</div>
+<div class="note">Configuración de tarifas y horarios de la agenda.</div>
 </section>
 
 <section id="pacienteWeb" class="section">
 <h2>🌐 Módulo de Reserva para el Paciente</h2>
-<div class="note">Este formulario crea solicitudes pendientes en Supabase.</div>
+<div class="note">Este formulario crea solicitudes pendientes para el profesional.</div>
 <input id="pName" placeholder="Nombre completo">
 <input id="pPhone" placeholder="WhatsApp">
 <input id="pEmail" placeholder="Correo">
@@ -243,9 +245,9 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 <div id="pMsg"></div>
 </section>
 
-<section id="adminLight" class="section">
-<h2>🛡️ Panel de Control del Administrador</h2>
-<div class="note">Admin LIGHT conectado a Supabase mediante la tabla <b>admin_config</b>.</div>
+<section id="adminLight" class="section" style="display:none">
+<h2>🛡️ Panel de Control del Administrador Maestro</h2>
+<div class="note">Configuración reservada al Administrador Maestro.</div>
 
 <label>Estado de la Licencia</label>
 <select id="licenseState">
@@ -262,8 +264,8 @@ Aquí se generan los mensajes institucionales para confirmar, reagendar, rechaza
 <label>Mensaje global</label>
 <input id="globalMessage" placeholder="Ej: Sistema temporalmente en mantenimiento">
 
-<button onclick="saveLicense()">💾 Guardar Admin LIGHT en Supabase</button>
-<button class="warnBtn" onclick="loadAdminConfig()">🔄 Recargar Admin LIGHT</button>
+<button onclick="saveLicense()">💾 Guardar configuración administrativa</button>
+<button class="warnBtn" onclick="loadAdminConfig()">🔄 Recargar configuración</button>
 
 <hr style="margin:22px 0;border:0;border-top:1px solid #ddd">
 <h3>🔑 Acceso temporal de profesionales</h3>
@@ -315,6 +317,18 @@ let communications=JSON.parse(localStorage.getItem('psiComunicacionV101'))||[];
 let chosen='',selected=0,reChosen='';
 
 const TABLE='citas_agenda';
+const MASTER_ADMIN_EMAIL='marioalexisbijman@gmail.com';
+function isMasterAdmin(){return String(currentEmail||'').trim().toLowerCase()===MASTER_ADMIN_EMAIL;}
+function applyRoleVisibility(){
+  const master=isMasterAdmin();
+  const tech=document.getElementById('masterTechnical');
+  const menu=document.getElementById('masterAdminMenu');
+  const panel=document.getElementById('adminLight');
+  if(tech) tech.style.display=master?'block':'none';
+  if(menu) menu.style.display=master?'block':'none';
+  if(panel && !master){panel.style.display='none';panel.classList.remove('active');}
+}
+
 
 function setStatus(msg,type='ok'){statusBox.innerHTML='<div class="'+(type==='err'?'err':'ok')+'">'+msg+'</div>'}
 function money(n){return '$'+Number(n||0).toLocaleString('es-CL')}
@@ -393,7 +407,7 @@ function clearCommunications(){if(confirm('¿Limpiar toda la bandeja local de co
 function renderCommunications(){if(typeof commList==='undefined')return;let pendientes=communications.filter(c=>c.status==='pendiente').length;let enviadas=communications.filter(c=>c.status==='enviada').length;let canceladas=communications.filter(c=>c.type==='cancelada'||c.type==='rechazada').length;if(typeof commBadge!=='undefined')commBadge.textContent=pendientes;if(typeof cmTotal!=='undefined')cmTotal.textContent=communications.length;if(typeof cmPendientes!=='undefined')cmPendientes.textContent=pendientes;if(typeof cmEnviadas!=='undefined')cmEnviadas.textContent=enviadas;if(typeof cmCanceladas!=='undefined')cmCanceladas.textContent=canceladas;if(!communications.length){commList.innerHTML='<div class="note">Aún no hay comunicaciones generadas.</div>';return}commList.innerHTML=communications.map(c=>{let cls=c.status==='enviada'?'enviada':(c.type==='cancelada'||c.type==='rechazada'?'cancelada':'confirmada');let badge=c.status==='enviada'?'pres':'pendingB';return `<div class="commItem ${cls}"><div><b>${c.title}</b><br><span class="small">${c.createdAt} · ${c.patient} · ${c.date} ${c.time}</span><br><span class="badge ${badge}">${c.status}</span></div><div class="commMsg">${c.message}</div><div class="commActions"><button onclick="copyCommunication('${c.id}')">📋 Copiar</button><button onclick="emailCommunication('${c.id}')">✉️ Correo</button><button onclick="whatsappCommunication('${c.id}')">📱 WhatsApp</button><button class="okBtn" onclick="markCommunicationSent('${c.id}')">✅ Marcar enviada</button></div></div>`}).join('');}
 
 function mobile(id){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('show'));document.getElementById(id).classList.add('show')}
-function show(id){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');mobile('center');render()}
+function show(id){if(id==='adminLight'&&!isMasterAdmin())return;document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));let el=document.getElementById(id);if(!el)return;if(id==='adminLight')el.style.display='block';el.classList.add('active');mobile('center');render()}
 function changeDay(n){selectedDate=addDays(selectedDate,n);newDate.value=selectedDate;selectedDateInput.value=selectedDate;loadSessions()}
 function saveLocal(){localStorage.setItem('psiMasterConfigV6',JSON.stringify(config));localStorage.setItem('psiMasterBlocksV6',JSON.stringify(blocks))}
 
@@ -482,6 +496,7 @@ function unlockApp(){
   loggedUserBox.style.display='block';
   loggedUserBox.innerHTML='<b>Profesional:</b> '+(currentProfessionalName||currentEmail||'Usuario')+'<br><span class="small">'+(currentEmail||'')+'</span>';
   logoutBtn.style.display='block';
+  applyRoleVisibility();
 }
 async function resolveProfessional(user){
   currentUserId=user?.id||null;
@@ -700,7 +715,7 @@ async function signOutProfessional(){
 
 async function loadAll(){
   await loadSessions();
-  await loadAdminConfig();
+  if(isMasterAdmin()) await loadAdminConfig();
 }
 
 function normalize(row){
@@ -795,7 +810,7 @@ async function insertSession(s){
   const {data,error}=await db.from(TABLE).insert([toDb(s)]).select();
   if(error){if((error.message||'').includes('duplicate')||(error.code||'')==='23505'){setStatus('⚠️ Esa hora ya está ocupada. Selecciona otro horario.','err');alert('⚠️ Esa hora ya está ocupada. Selecciona otro horario.');await loadSessions();return false}setStatus('Error guardando:\n'+error.message+'\nCódigo: '+(error.code||''),'err');return false}
   if(data && data[0]) s.id=data[0].id;
-  setStatus('Guardado correctamente en Supabase.');
+  setStatus('Guardado correctamente.');
   return true;
 }
 
@@ -806,7 +821,7 @@ async function updateSession(i,patch){
   const {error}=await db.from(TABLE).update(toDb(updated)).eq('id',updated.id);
   if(error){if((error.message||'').includes('duplicate')||(error.code||'')==='23505'){setStatus('⚠️ Esa hora ya está ocupada. Selecciona otro horario.','err');alert('⚠️ Esa hora ya está ocupada. Selecciona otro horario.');await loadSessions();return}setStatus('Error actualizando:\n'+error.message+'\nCódigo: '+(error.code||''),'err');return}
   Object.assign(sessions[i],patch);
-  setStatus('Cambio actualizado en Supabase.');
+  setStatus('Cambio actualizado correctamente.');
   render();
 }
 
