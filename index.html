@@ -313,7 +313,7 @@ let config=JSON.parse(localStorage.getItem('psiMasterConfigV6'))||{online:30000,
 let sessions=[];
 let blocks=JSON.parse(localStorage.getItem('psiMasterBlocksV6'))||[{start:'13:00',end:'14:00',reason:'Colación'}];
 let adminConfig={id:null,licencia_activa:true,modo_mantenimiento:false,mensaje_global:''};
-let communications=JSON.parse(localStorage.getItem('psiComunicacionV101'))||[];
+let communications=[]; // Se carga por profesional después de autenticar
 let chosen='',selected=0,reChosen='';
 
 const TABLE='citas_agenda';
@@ -392,13 +392,29 @@ function free(t,skip=-1,date=selectedDate){return !busy(t,skip,date)&&!blocked(t
 function today(){return new Date().toISOString().slice(0,10)}
 function addDays(dateStr,n){let d=new Date(dateStr+'T00:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
 
-function saveCommunications(){localStorage.setItem('psiComunicacionV101',JSON.stringify(communications));}
+function communicationsStorageKey(){
+  return currentProfessionalId ? 'psiComunicacionV101_'+currentProfessionalId : null;
+}
+function loadCommunicationsForCurrentProfessional(){
+  const key=communicationsStorageKey();
+  if(!key){communications=[];return;}
+  try{
+    communications=JSON.parse(localStorage.getItem(key))||[];
+  }catch(e){
+    communications=[];
+  }
+}
+function saveCommunications(){
+  const key=communicationsStorageKey();
+  if(!key)return;
+  localStorage.setItem(key,JSON.stringify(communications));
+}
 function cleanPhoneForWhatsApp(phone){let p=String(phone||'').replace(/\D/g,'');if(!p)return'';if(p.startsWith('56'))return p;if(p.length===9)return'56'+p;return p;}
 function communicationTitle(type){if(type==='confirmada')return'Reserva confirmada';if(type==='reagendada')return'Reserva reagendada';if(type==='cancelada')return'Reserva cancelada';if(type==='rechazada')return'Solicitud no confirmada';if(type==='recibida')return'Solicitud recibida';return'Comunicación PsiAgenda';}
-function professionalSignature(){return 'Valentina Psicóloga';}
+function professionalSignature(){return 'PsiAgenda Reservas\nUna empresa de MB Connection';}
 function institutionalFooter(){return 'Agradecemos la confianza depositada en nuestros servicios.\n\nSi deseas modificar, reagendar o cancelar tu cita, contáctanos utilizando el correo electrónico o WhatsApp registrados durante tu reserva. Nuestro equipo gestionará tu solicitud a la brevedad.\n\nPsiAgenda\nLa atención comienza antes de la consulta.\n\n'+professionalSignature();}
 function buildPatientMessage(type,s,extra={}){let name=s?.name||'Paciente';let date=extra.date||s?.date||selectedDate;let time=extra.time||s?.time||'';let mode=extra.mode||s?.mode||'';let value=extra.value||s?.value||0;let header='Estimado(a) '+name+':\n\n';if(type==='recibida')return header+'Hemos recibido tu solicitud de atención. Muchas gracias por confiar en nosotros.\n\nDetalles de la solicitud:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\n\nTu solicitud será revisada por la profesional y recibirás una respuesta mediante el correo electrónico y/o WhatsApp registrados durante tu reserva.\n\n'+institutionalFooter();if(type==='confirmada')return header+'Nos complace informarte que tu solicitud ha sido aceptada y tu reserva ha quedado confirmada.\n\nDetalles de tu atención:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\nValor: '+money(value)+'\n\n'+institutionalFooter();if(type==='reagendada')return header+'Con el objetivo de brindarte una mejor atención, tu cita ha sido reagendada.\n\nNueva información de tu reserva:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\nValor: '+money(value)+'\n\n'+institutionalFooter();if(type==='cancelada')return header+'Lamentamos informarte que, por motivos de agenda, la atención programada no podrá realizarse en la fecha prevista.\n\nReserva cancelada:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\n\nSi deseas una nueva hora, estaremos encantados de ayudarte a coordinar una nueva reserva.\n\n'+institutionalFooter();if(type==='rechazada')return header+'Lamentamos informarte que tu solicitud de hora no pudo ser confirmada en el horario solicitado.\n\nSolicitud revisada:\nFecha: '+date+'\nHora: '+time+'\nModalidad: '+mode+'\n\nPuedes solicitar una nueva hora disponible a través del sistema de reservas.\n\n'+institutionalFooter();return header+'Tienes una actualización relacionada con tu reserva.\n\n'+institutionalFooter();}
-function addCommunication(type,s,extra={}){if(!s)return;let item={id:'C'+Date.now()+Math.floor(Math.random()*10000),type:type,title:communicationTitle(type),patient:s.name||'Paciente',email:s.email||'',phone:s.phone||'',date:extra.date||s.date||selectedDate,time:extra.time||s.time||'',mode:extra.mode||s.mode||'',value:Number(extra.value||s.value||0),createdAt:new Date().toLocaleString('es-CL'),status:'pendiente',message:buildPatientMessage(type,s,extra)};communications.unshift(item);saveCommunications();}
+function addCommunication(type,s,extra={}){if(!s||!currentProfessionalId)return;let item={id:'C'+Date.now()+Math.floor(Math.random()*10000),professionalId:currentProfessionalId,type:type,title:communicationTitle(type),patient:s.name||'Paciente',email:s.email||'',phone:s.phone||'',date:extra.date||s.date||selectedDate,time:extra.time||s.time||'',mode:extra.mode||s.mode||'',value:Number(extra.value||s.value||0),createdAt:new Date().toLocaleString('es-CL'),status:'pendiente',message:buildPatientMessage(type,s,extra)};communications.unshift(item);saveCommunications();}
 function copyCommunication(id){let c=communications.find(x=>x.id===id);if(!c)return;navigator.clipboard.writeText(c.message).then(()=>alert('Mensaje copiado. Puedes pegarlo en WhatsApp o correo.'));}
 function emailCommunication(id){let c=communications.find(x=>x.id===id);if(!c)return;if(!c.email){alert('Este paciente no tiene correo registrado.');return}window.location.href='mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent(c.title+' - PsiAgenda')+'&body='+encodeURIComponent(c.message);}
 function whatsappCommunication(id){let c=communications.find(x=>x.id===id);if(!c)return;let phone=cleanPhoneForWhatsApp(c.phone);if(!phone){alert('Este paciente no tiene WhatsApp/teléfono registrado.');return}window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(c.message),'_blank');}
@@ -517,6 +533,7 @@ async function resolveProfessional(user){
 async function finishAuthenticatedSession(user){
   try{
     await resolveProfessional(user);
+    loadCommunicationsForCurrentProfessional();
     recoveryMode=false;
     if(user?.user_metadata?.must_change_password===true){
       hideAuthPanels();
@@ -710,7 +727,7 @@ async function saveRecoveredPassword(){
 async function signOutProfessional(){
   if(db) await db.auth.signOut();
   currentUserId=null;currentEmail=null;currentProfessionalId=null;currentProfessionalName='';
-  sessions=[];render();showLoginPanel();showAuthMessage('Sesión cerrada correctamente.','ok');
+  sessions=[];communications=[];render();showLoginPanel();showAuthMessage('Sesión cerrada correctamente.','ok');
 }
 
 async function loadAll(){
